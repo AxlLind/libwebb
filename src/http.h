@@ -17,8 +17,8 @@ typedef enum {
 } HttpMethod;
 
 typedef struct HttpHeaders {
-  char *header;
-  char *value;
+  char *key;
+  char *val;
   struct HttpHeaders *next;
 } HttpHeaders;
 
