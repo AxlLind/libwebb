@@ -1,6 +1,9 @@
 # make out (hihi) directory
 /out
 
+# vscode config dir
+.vscode
+
 # Prerequisites
 *.d
 
