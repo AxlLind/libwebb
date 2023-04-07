@@ -5,7 +5,7 @@
 SOURCES := $(filter-out src/main.c,$(wildcard src/*.c))
 
 CC     := gcc
-CFLAGS := -std=c99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align=strict -Wshadow
+CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align=strict -Wshadow
 
 $(SOURCES:src/%.c=out/%.o): out/%.o: src/%.c src/%.h
 	@mkdir -p $(dir $@)
