@@ -12,20 +12,20 @@
 #define BACKLOG 10
 
 static int open_server_socket(const char *port) {
-  struct addrinfo *info = NULL;
+  struct addrinfo *servinfo = NULL;
   struct addrinfo hints = {
     .ai_family = AF_UNSPEC,
     .ai_flags = AI_PASSIVE,
     .ai_socktype = SOCK_STREAM,
   };
 
-  if (getaddrinfo(NULL, port, &hints, &info) != 0) {
+  if (getaddrinfo(NULL, port, &hints, &servinfo) != 0) {
     perror("getaddrinfo");
     return -1;
   }
 
   int sockfd = -1;
-  for (; info; info = info->ai_next) {
+  for (struct addrinfo *info = servinfo; info; info = info->ai_next) {
     sockfd = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
     if (sockfd == -1) {
       perror("socket");
@@ -43,7 +43,7 @@ static int open_server_socket(const char *port) {
     }
     break;
   }
-  freeaddrinfo(info);
+  freeaddrinfo(servinfo);
 
   if (sockfd == -1) {
     fprintf(stderr, "failed to bind to an ip!\n");
