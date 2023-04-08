@@ -73,13 +73,13 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
     int connfd = accept(server->sockfd, (struct sockaddr *) &addr, &addrsize);
     if (connfd == -1) {
       perror("accept");
-      return 1;
+      break;
     }
 
     int size = recv(connfd, msg, sizeof(msg) - 1, 0);
     if (size == -1) {
       perror("recv");
-      return 1;
+      break;
     }
     msg[size] = '\0';
     printf("Got msg of size %d:\n%s\n", size, msg);
@@ -98,6 +98,11 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
 
     if (close(connfd) == -1) {
       perror("close");
+      break;
     }
   }
+
+  close(server->sockfd);
+  memset(server, 0, sizeof(*server));
+  return 1;
 }
