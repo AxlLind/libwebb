@@ -16,7 +16,7 @@ out/webc: src/main.c $(SOURCES:src/%.c=out/%.o)
 	$(CC) $(CFLAGS) $^ -o $@
 
 run: out/webc
-	./$<
+	./$< .
 
 clean:
 	rm -rf out
