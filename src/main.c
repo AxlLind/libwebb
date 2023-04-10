@@ -21,12 +21,12 @@ char* http_handler(HttpRequest *req) {
 
 int print_usage(const char *program, int with_description) {
   FILE *out = with_description ? stdout : stderr;
-  fprintf(out, "usage: %s [-h] [-p PORT] DIR\n", program);
+  fprintf(out, "usage: %s [-h] [-p PORT] [DIR]\n", program);
   if (with_description) {
     fprintf(out, "web.c - A small http server written in C\n");
     fprintf(out, "\n");
     fprintf(out, "args:\n");
-    fprintf(out, "  DIR      Directory to run web server from\n");
+    fprintf(out, "  DIR      Directory to run web server from, defaults to cwd\n");
     fprintf(out, "  -p PORT  Port to listen on, default " DEFAULT_PORT "\n");
     fprintf(out, "  -h       Show this help text\n");
   }
@@ -51,14 +51,14 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Unexpected extra positional arguments.\n");
     return print_usage(argv[0], 0);
   }
-  if (optind + 1 != argc) {
-    fprintf(stderr, "Missing positional argument DIR\n");
-    return print_usage(argv[0], 0);
-  }
-
   char dir[PATH_MAX];
-  if (!realpath(argv[optind], dir)) {
-    perror("realpath");
+  if (optind + 1 == argc) {
+    if (!realpath(argv[optind], dir)) {
+      perror("realpath");
+      return 1;
+    }
+  } else if (!getcwd(dir, sizeof(dir))) {
+    perror("getcwd");
     return 1;
   }
   (void) dir; // TODO: use the DIR argument
