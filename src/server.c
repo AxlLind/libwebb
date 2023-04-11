@@ -85,7 +85,10 @@ static char* malloc_str(const char *s) {
 
 static int send_response(int connfd, const HttpResponse *res) {
   char buf[65536], *bufptr = buf;
-  bufptr += sprintf(bufptr, "HTTP/1.1 %d %s\r\n", res->status, "TODO");
+  char *status_str = http_status_str(res->status);
+  if (!status_str)
+    return 1;
+  bufptr += sprintf(bufptr, "HTTP/1.1 %d %s\r\n", res->status, status_str);
   for (HttpHeaders *h = res->headers; h; h = h->next)
     bufptr += sprintf(bufptr, "%s: %s\r\n", h->key, h->val);
   bufptr += sprintf(bufptr, "\r\n");

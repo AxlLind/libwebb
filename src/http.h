@@ -37,6 +37,8 @@ int http_parse_req(HttpRequest *req, const char *data);
 
 char* http_method_str(HttpMethod m);
 
+char* http_status_str(int status);
+
 void http_req_free(HttpRequest *req);
 
 void http_res_free(HttpResponse *res);
