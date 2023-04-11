@@ -1,8 +1,6 @@
 #ifndef HTTP_H
 #define HTTP_H
 
-#include "common.h"
-
 typedef enum {
   HTTP_CONNECT,
   HTTP_DELETE,
@@ -35,7 +33,7 @@ typedef struct {
   int body_len;
 } HttpResponse;
 
-Result http_parse_req(HttpRequest *req, const char *data);
+int http_parse_req(HttpRequest *req, const char *data);
 
 char* http_method_str(HttpMethod m);
 

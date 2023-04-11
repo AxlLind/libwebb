@@ -6,7 +6,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include "server.h"
-#include "common.h"
 #include "http.h"
 
 #define BACKLOG 10
@@ -121,7 +120,7 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
     memset(&res, 0, sizeof(res));
     http_res_add_header(&res, "server", malloc_str("web.c 0.1"));
 
-    if (http_parse_req(&req, msg) != RESULT_OK) {
+    if (http_parse_req(&req, msg)) {
       fprintf(stderr, "failed to parse http request!\n");
       res.status = 400;
     } else if (handler_fn(&req, &res)) {
