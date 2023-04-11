@@ -88,9 +88,9 @@ Result http_parse_req(HttpRequest *req, const char *data) {
       return RESULT_FAIL;
 
     HttpHeaders *header = malloc(sizeof(HttpHeaders));
-    header->key = copy_string(data, header_mid),
-    header->val = copy_string(header_mid + 2, header_end),
-    header->next = req->headers,
+    header->key = copy_string(data, header_mid);
+    header->val = copy_string(header_mid + 2, header_end);
+    header->next = req->headers;
     req->headers = header;
 
     // http headers are case insensitive so convert to lower
@@ -102,14 +102,31 @@ Result http_parse_req(HttpRequest *req, const char *data) {
   return RESULT_OK;
 }
 
-void http_req_free(HttpRequest *req) {
-  HttpHeaders *header = req->headers;
+static void free_headers(HttpHeaders *header, int allocated_keys) {
   while (header) {
     HttpHeaders *next = header->next;
-    free(header->key);
+    if (allocated_keys)
+      free(header->key);
     free(header->val);
     free(header);
     header = next;
   }
+}
+
+void http_req_free(HttpRequest *req) {
+  free_headers(req->headers, 1);
   free(req->uri);
+}
+
+void http_res_free(HttpResponse *res) {
+  free_headers(res->headers, 0);
+  free(res->body);
+}
+
+void http_res_add_header(HttpResponse *res, char *key, char *val) {
+  HttpHeaders *header = malloc(sizeof(HttpHeaders));
+  header->key = key;
+  header->val = val;
+  header->next = res->headers;
+  res->headers = header;
 }

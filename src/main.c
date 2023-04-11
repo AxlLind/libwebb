@@ -8,15 +8,15 @@
 
 #define DEFAULT_PORT "8080"
 
-char* http_handler(HttpRequest *req) {
+int http_handler(HttpRequest *req, HttpResponse *res) {
   printf("method=%s\n", http_method_str(req->method));
   printf("uri=%s\n", req->uri);
   for (HttpHeaders *h = req->headers; h; h = h->next)
     printf("%s: %s\n", h->key, h->val);
 
-  char *res = malloc(32);
-  strcpy(res, "HTTP/1.1 404 Not Found\r\n\r\n");
-  return res;
+  res->status = 404;
+  http_res_add_header(res, "x-webc", strcpy(malloc(32), "some value here"));
+  return 0;
 }
 
 int print_usage(const char *program, int with_description) {

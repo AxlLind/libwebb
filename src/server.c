@@ -65,6 +65,38 @@ int http_server_init(HttpServer *server, const char *port) {
   return 1;
 }
 
+static int send_all(int fd, const char *buf, int len) {
+  while (len) {
+    int sent = send(fd, buf, len, 0);
+    if (sent == -1) {
+      perror("send");
+      return 1;
+    }
+    buf += sent;
+    len -= sent;
+  }
+  return 0;
+}
+
+static char* malloc_str(const char *s) {
+  int len = strlen(s) + 1;
+  char *res = malloc(len);
+  return memcpy(res, s, len);
+}
+
+static int send_response(int connfd, const HttpResponse *res) {
+  char buf[65536], *bufptr = buf;
+  bufptr += sprintf(bufptr, "HTTP/1.1 %d %s\r\n", res->status, "TODO");
+  for (HttpHeaders *h = res->headers; h; h = h->next)
+    bufptr += sprintf(bufptr, "%s: %s\r\n", h->key, h->val);
+  bufptr += sprintf(bufptr, "\r\n");
+  if (send_all(connfd, buf, bufptr - buf))
+    return 1;
+  if (send_all(connfd, res->body, res->body_len))
+    return 1;
+  return 0;
+}
+
 int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
   char msg[65536];
   struct sockaddr_storage addr;
@@ -85,16 +117,28 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
     printf("Got msg of size %d:\n%s\n", size, msg);
 
     HttpRequest req;
-    if (http_parse_req(&req, msg) == RESULT_OK) {
-      char* response = handler_fn(&req);
-      send(connfd, response, strlen(response), 0);
-      free(response);
-    } else {
+    HttpResponse res;
+    memset(&res, 0, sizeof(res));
+    http_res_add_header(&res, "server", malloc_str("web.c 0.1"));
+
+    if (http_parse_req(&req, msg) != RESULT_OK) {
       fprintf(stderr, "failed to parse http request!\n");
-      char *response = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
-      send(connfd, response, strlen(response), 0);
+      res.status = 400;
+    } else if (handler_fn(&req, &res)) {
+      fprintf(stderr, "Request handler failed!");
+      break;
     }
+    if (res.body) {
+      char *content_len = malloc(16);
+      sprintf(content_len, "%d", res.body_len);
+      http_res_add_header(&res, "content-length", content_len);
+    }
+    if (send_response(connfd, &res))
+      break;
     http_req_free(&req);
+    http_res_free(&res);
+
+    printf("sent response!\n");
 
     if (close(connfd) == -1) {
       perror("close");

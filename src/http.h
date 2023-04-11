@@ -28,11 +28,21 @@ typedef struct {
   HttpHeaders *headers;
 } HttpRequest;
 
+typedef struct {
+  int status;
+  HttpHeaders *headers;
+  char *body;
+  int body_len;
+} HttpResponse;
+
 Result http_parse_req(HttpRequest *req, const char *data);
 
 char* http_method_str(HttpMethod m);
 
 void http_req_free(HttpRequest *req);
 
+void http_res_free(HttpResponse *res);
+
+void http_res_add_header(HttpResponse *res, char *key, char *val);
 
 #endif // HTTP_H

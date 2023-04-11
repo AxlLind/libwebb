@@ -3,7 +3,7 @@
 
 #include "http.h"
 
-typedef char* (HttpHandler)(HttpRequest*);
+typedef int (HttpHandler)(HttpRequest*, HttpResponse*);
 
 typedef struct {
   int sockfd;
