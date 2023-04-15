@@ -56,12 +56,8 @@ static int open_server_socket(const char *port) {
 }
 
 int http_server_init(HttpServer *server, const char *port) {
-  int sockfd = open_server_socket(port);
-  if (sockfd == -1) {
-    return 0;
-  }
-  *server = (HttpServer) { .sockfd = sockfd };
-  return 1;
+  server->sockfd = open_server_socket(port);
+  return server->sockfd == -1 ? 0 : 1;
 }
 
 static int send_all(int fd, const char *buf, int len) {
@@ -87,6 +83,8 @@ static int send_response(int connfd, const HttpResponse *res) {
   bufptr += sprintf(bufptr, "HTTP/1.1 %d %s\r\n", res->status, status_str);
   for (HttpHeaders *h = res->headers; h; h = h->next)
     bufptr += sprintf(bufptr, "%s: %s\r\n", h->key, h->val);
+  if (res->body_len)
+    bufptr += sprintf(bufptr, "content-length: %d\r\n", res->body_len);
   bufptr += sprintf(bufptr, "\r\n");
   if (send_all(connfd, buf, bufptr - buf))
     return 1;
@@ -125,11 +123,6 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
     } else if (handler_fn(&req, &res)) {
       fprintf(stderr, "Request handler failed!");
       break;
-    }
-    if (res.body) {
-      char *content_len = malloc(16);
-      sprintf(content_len, "%d", res.body_len);
-      http_res_add_header(&res, "content-length", content_len);
     }
     if (send_response(connfd, &res))
       break;
