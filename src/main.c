@@ -14,15 +14,27 @@ int http_handler(HttpRequest *req, HttpResponse *res) {
   for (HttpHeaders *h = req->headers; h; h = h->next)
     printf("%s: %s\n", h->key, h->val);
 
-  res->status = 404;
+  const char *body =
+    "<!DOCTYPE html>\n"
+    "<html>\n"
+    "<head>\n"
+    "<title>Web C Test</title>\n"
+    "</head>\n"
+    "<body>\n"
+    "<h1>Wow, html document from web.c</h1>\n"
+    "</body>\n"
+    "</html>\n";
+  res->body_len = strlen(body);
+  res->body = strcpy(malloc(res->body_len + 1), body);
   http_res_add_header(res, "x-webc", strcpy(malloc(32), "some value here"));
+  res->status = 200;
   return 0;
 }
 
-int print_usage(const char *program, int with_description) {
-  FILE *out = with_description ? stdout : stderr;
+int print_usage(const char *program, int error) {
+  FILE *out = error ? stderr : stdout;
   fprintf(out, "usage: %s [-h] [-p PORT] [DIR]\n", program);
-  if (with_description) {
+  if (!error) {
     fprintf(out, "web.c - A small http server written in C\n");
     fprintf(out, "\n");
     fprintf(out, "args:\n");
@@ -30,7 +42,7 @@ int print_usage(const char *program, int with_description) {
     fprintf(out, "  -p PORT  Port to listen on, default " DEFAULT_PORT "\n");
     fprintf(out, "  -h       Show this help text\n");
   }
-  return with_description ? 0 : 1;
+  return error;
 }
 
 int main(int argc, char *argv[]) {
@@ -42,14 +54,14 @@ int main(int argc, char *argv[]) {
       port = optarg;
       break;
     case 'h':
-      return print_usage(argv[0], 1);
-    default:
       return print_usage(argv[0], 0);
+    default:
+      return print_usage(argv[0], 1);
     }
   }
   if (optind + 1 < argc) {
     fprintf(stderr, "Unexpected extra positional arguments.\n");
-    return print_usage(argv[0], 0);
+    return print_usage(argv[0], 1);
   }
   char dir[PATH_MAX];
   if (optind + 1 == argc) {

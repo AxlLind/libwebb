@@ -65,22 +65,18 @@ int http_server_init(HttpServer *server, const char *port) {
 }
 
 static int send_all(int fd, const char *buf, int len) {
-  while (len) {
-    int sent = send(fd, buf, len, 0);
+  for (int sent = -1; len; buf += sent, len -= sent) {
+    sent = send(fd, buf, len, 0);
     if (sent == -1) {
       perror("send");
       return 1;
     }
-    buf += sent;
-    len -= sent;
   }
   return 0;
 }
 
 static char* malloc_str(const char *s) {
-  int len = strlen(s) + 1;
-  char *res = malloc(len);
-  return memcpy(res, s, len);
+  return strcpy(malloc(strlen(s) + 1), s);
 }
 
 static int send_response(int connfd, const HttpResponse *res) {
