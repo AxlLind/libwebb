@@ -88,7 +88,7 @@ static int send_response(int connfd, const HttpResponse *res) {
   bufptr += sprintf(bufptr, "\r\n");
   if (send_all(connfd, buf, bufptr - buf))
     return 1;
-  if (send_all(connfd, res->body, res->body_len))
+  if (res->body && send_all(connfd, res->body, res->body_len))
     return 1;
   return 0;
 }
