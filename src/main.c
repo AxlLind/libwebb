@@ -8,7 +8,7 @@
 
 #define DEFAULT_PORT "8080"
 
-int http_handler(HttpRequest *req, HttpResponse *res) {
+int http_handler(const HttpRequest *req, HttpResponse *res) {
   printf("method=%s\n", http_method_str(req->method));
   printf("uri=%s\n", req->uri);
   for (HttpHeaders *h = req->headers; h; h = h->next)
