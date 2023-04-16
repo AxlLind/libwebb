@@ -87,6 +87,49 @@ char* http_status_str(int status) {
   }
 }
 
+static char* uri_decode(const char *s, int len) {
+  static const char tbl[256] = {
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,
+    -1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  };
+  char *res = malloc(len + 1), *dst = res;
+  for (int i = 0; i < len; i++) {
+    char c = s[i];
+    if (c == '+') {
+      c = ' ';
+    } else if (c == '%') {
+      if (i + 2 >= len)
+        goto err;
+      char a = tbl[(unsigned char) s[++i]];
+      char b = tbl[(unsigned char) s[++i]];
+      if (a < 0 || b < 0)
+        goto err;
+      c = (a << 4) | b;
+    }
+    *dst++ = c;
+  }
+  *dst = '\0';
+  return res;
+
+err:
+  free(res);
+  return NULL;
+}
+
 static HttpMethod parse_http_method(const char *method, const int len) {
   if (len == 7 && memcmp(method, "CONNECT", 7) == 0)
     return HTTP_CONNECT;
@@ -129,7 +172,9 @@ int http_parse_req(HttpRequest *req, const char *data) {
   char *uri_end = strchr(data, ' ');
   if (!uri_end)
     return 1;
-  req->uri = copy_string(data, uri_end);
+  req->uri = uri_decode(data, uri_end - data);
+  if (!req->uri)
+    return 1;
 
   // parse the required HTTP/1.1 trailer
   data = uri_end + 1;
