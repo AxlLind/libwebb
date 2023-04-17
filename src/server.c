@@ -72,10 +72,6 @@ static int send_all(int fd, const char *buf, int len) {
   return 0;
 }
 
-static char* malloc_str(const char *s) {
-  return strcpy(malloc(strlen(s) + 1), s);
-}
-
 static int send_response(int connfd, const HttpResponse *res) {
   char buf[65536], *bufptr = buf;
   char *status_str = http_status_str(res->status);

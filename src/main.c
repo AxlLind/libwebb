@@ -26,7 +26,7 @@ int http_handler(const HttpRequest *req, HttpResponse *res) {
     "</html>\n";
   res->body_len = strlen(body);
   res->body = strcpy(malloc(res->body_len + 1), body);
-  http_res_add_header(res, "x-webc", strcpy(malloc(32), "some value here"));
+  http_res_add_header(res, "x-webc", strdup("some value here"));
   res->status = 200;
   return 0;
 }

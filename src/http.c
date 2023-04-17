@@ -152,12 +152,6 @@ static HttpMethod parse_http_method(const char *method, const int len) {
   return HTTP_INVALID;
 }
 
-static char* copy_string(const char *src, const char *end) {
-  int len = end - src;
-  char *dst = calloc(len + 1, 1);
-  return memcpy(dst, src, len);
-}
-
 int http_parse_req(HttpRequest *req, const char *data) {
   memset(req, 0, sizeof(*req));
 
@@ -201,8 +195,8 @@ int http_parse_req(HttpRequest *req, const char *data) {
       return 1;
 
     HttpHeaders *header = malloc(sizeof(HttpHeaders));
-    header->key = copy_string(data, header_mid);
-    header->val = copy_string(header_mid + 2, header_end);
+    header->key = strndup(data, header_mid - data);
+    header->val = strndup(header_mid + 2, header_end - header_mid - 2);
     header->next = req->headers;
     req->headers = header;
 
