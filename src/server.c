@@ -88,7 +88,7 @@ static int send_response(int connfd, const HttpResponse *res) {
   time_t now = time(0);
   struct tm *tm = gmtime(&now);
   bufptr += strftime(bufptr, buf + sizeof(buf) - bufptr, "date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm);
-
+  bufptr += sprintf(bufptr, "server: webc 0.1\r\n");
   bufptr += sprintf(bufptr, "connection: close\r\n");
   if (res->body_len)
     bufptr += sprintf(bufptr, "content-length: %d\r\n", res->body_len);
@@ -122,7 +122,6 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
     HttpRequest req;
     HttpResponse res;
     memset(&res, 0, sizeof(res));
-    http_res_add_header(&res, "server", malloc_str("web.c 0.1"));
 
     if (http_parse_req(&req, msg)) {
       fprintf(stderr, "failed to parse http request!\n");
