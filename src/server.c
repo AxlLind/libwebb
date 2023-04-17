@@ -1,10 +1,11 @@
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 #include "server.h"
 #include "http.h"
 
@@ -83,6 +84,12 @@ static int send_response(int connfd, const HttpResponse *res) {
   bufptr += sprintf(bufptr, "HTTP/1.1 %d %s\r\n", res->status, status_str);
   for (HttpHeaders *h = res->headers; h; h = h->next)
     bufptr += sprintf(bufptr, "%s: %s\r\n", h->key, h->val);
+
+  time_t now = time(0);
+  struct tm *tm = gmtime(&now);
+  bufptr += strftime(bufptr, buf + sizeof(buf) - bufptr, "date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm);
+
+  bufptr += sprintf(bufptr, "connection: close\r\n");
   if (res->body_len)
     bufptr += sprintf(bufptr, "content-length: %d\r\n", res->body_len);
   bufptr += sprintf(bufptr, "\r\n");
