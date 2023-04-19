@@ -153,59 +153,50 @@ static HttpMethod parse_http_method(const char *method, const int len) {
   return HTTP_INVALID;
 }
 
-int http_parse_req(HttpRequest *req, const char *data) {
+int http_parse_req(HttpRequest *req, HttpConnection *conn) {
   memset(req, 0, sizeof(*req));
 
   // parse http verb, ends with a space
-  char *verb_end = strchr(data, ' ');
-  req->method = parse_http_method(data, verb_end == NULL ? 0 : verb_end - data);
+  const char *line = http_conn_next(conn);
+  if (!line)
+    return 1;
+  char *verb_end = strchr(line, ' ');
+  req->method = parse_http_method(line, verb_end ? verb_end - line : 0);
   if (req->method == HTTP_INVALID)
     return 1;
 
   // parse uri, ends with a space
-  data = verb_end + 1;
-  char *uri_end = strchr(data, ' ');
+  line = verb_end + 1;
+  char *uri_end = strchr(line, ' ');
   if (!uri_end)
     return 1;
-  req->uri = uri_decode(data, uri_end - data);
+  req->uri = uri_decode(line, uri_end - line);
   if (!req->uri)
     return 1;
 
   // parse the required HTTP/1.1 trailer
-  data = uri_end + 1;
-  char *start_line_end = strstr(data, "\r\n");
-  int trailer_len = start_line_end - data;
-  if (trailer_len != 8 || memcmp(data, "HTTP/1.1", 8) != 0)
+  if (strcmp(uri_end + 1, "HTTP/1.1") != 0)
     return 1;
 
   // parse each header
-  data = start_line_end + 2;
   while (1) {
-    if (data[0] == '\0')
+    line = http_conn_next(conn);
+    if (!line)
       return 1;
+
     // empty line means end of headers
-    if (memcmp(data, "\r\n", 2) == 0)
+    if (strcmp(line, "") == 0)
       break;
 
-    // headers are on the form: "KEY: VAL\r\n"
-    char *header_mid = strstr(data, ": ");
+    char *header_mid = strstr(line, ": ");
     if (!header_mid)
-      return 1;
-    char *header_end = strstr(header_mid + 2, "\r\n");
-    if (!header_end)
       return 1;
 
     HttpHeaders *header = malloc(sizeof(HttpHeaders));
-    header->key = strndup(data, header_mid - data);
-    header->val = strndup(header_mid + 2, header_end - header_mid - 2);
+    header->key = strndup(line, header_mid - line);
+    header->val = strdup(header_mid + 2);
     header->next = req->headers;
     req->headers = header;
-
-    // http headers are case insensitive so convert to lower
-    for (char *key = header->key; *key; key++)
-      *key = tolower(*key);
-
-    data = header_end + 2;
   }
   return 0;
 }
