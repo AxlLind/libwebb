@@ -231,6 +231,13 @@ void http_res_free(HttpResponse *res) {
   free(res->body);
 }
 
+const char* http_get_header(HttpHeaders *h, char *key) {
+  for (; h; h = h->next)
+    if (strcasecmp(key, h->key))
+      return h->val;
+  return NULL;
+}
+
 void http_res_add_header(HttpResponse *res, char *key, char *val) {
   HttpHeaders *header = malloc(sizeof(HttpHeaders));
   header->key = key;
