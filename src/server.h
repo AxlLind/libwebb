@@ -13,4 +13,6 @@ int http_server_init(HttpServer *server, const char *port);
 
 int http_server_run(HttpServer *server, HttpHandler *handler);
 
+const char* http_conn_next(HttpConnection *conn);
+
 #endif

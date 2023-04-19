@@ -1,6 +1,13 @@
 #ifndef HTTP_H
 #define HTTP_H
 
+typedef struct {
+  int fd;
+  char buf[4096];
+  int read;
+  int i;
+} HttpConnection;
+
 typedef enum {
   HTTP_CONNECT,
   HTTP_DELETE,
@@ -11,7 +18,7 @@ typedef enum {
   HTTP_POST,
   HTTP_PUT,
   HTTP_TRACE,
-  HTTP_INVALID,
+  HTTP_INVALID = 0,
 } HttpMethod;
 
 typedef struct HttpHeaders {
@@ -33,11 +40,11 @@ typedef struct {
   int body_len;
 } HttpResponse;
 
-int http_parse_req(HttpRequest *req, const char *data);
+int http_parse_req(HttpRequest *req, HttpConnection *conn);
 
-char* http_method_str(HttpMethod m);
+const char* http_method_str(HttpMethod m);
 
-char* http_status_str(int status);
+const char* http_status_str(int status);
 
 void http_req_free(HttpRequest *req);
 

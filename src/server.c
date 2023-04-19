@@ -74,7 +74,7 @@ static int send_all(int fd, const char *buf, int len) {
 
 static int send_response(int connfd, const HttpResponse *res) {
   char buf[65536], *bufptr = buf;
-  char *status_str = http_status_str(res->status);
+  const char *status_str = http_status_str(res->status);
   if (!status_str)
     return 1;
   bufptr += sprintf(bufptr, "HTTP/1.1 %d %s\r\n", res->status, status_str);
@@ -97,7 +97,6 @@ static int send_response(int connfd, const HttpResponse *res) {
 }
 
 int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
-  char msg[65536];
   struct sockaddr_storage addr;
   socklen_t addrsize = sizeof(addr);
   while (1) {
@@ -107,31 +106,27 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
       break;
     }
 
-    int size = recv(connfd, msg, sizeof(msg) - 1, 0);
-    if (size == -1) {
-      perror("recv");
-      break;
-    }
-    msg[size] = '\0';
-    printf("Got msg of size %d:\n%s\n", size, msg);
-
+    HttpConnection conn = {
+      .fd = connfd,
+      .i = 0,
+      .read = 0,
+    };
     HttpRequest req;
-    HttpResponse res;
-    memset(&res, 0, sizeof(res));
+    HttpResponse res = {0};
 
-    if (http_parse_req(&req, msg)) {
+    if (http_parse_req(&req, &conn)) {
       fprintf(stderr, "failed to parse http request!\n");
       res.status = 400;
-    } else if (handler_fn(&req, &res)) {
+    } if (handler_fn(&req, &res)) {
       fprintf(stderr, "Request handler failed!");
       break;
     }
-    if (send_response(connfd, &res))
+    if (send_response(connfd, &res)) {
+      fprintf(stderr, "Sending response failed!\n");
       break;
+    }
     http_req_free(&req);
     http_res_free(&res);
-
-    printf("sent response!\n");
 
     if (close(connfd) == -1) {
       perror("close");
@@ -142,4 +137,28 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
   close(server->sockfd);
   memset(server, 0, sizeof(*server));
   return 1;
+}
+
+const char* http_conn_next(HttpConnection *conn) {
+retry:
+  for (int i = conn->i; i < conn->read - 1; i++) {
+    if (memcmp(conn->buf + i, "\r\n", 2) == 0) {
+      conn->buf[i] = '\0';
+      char *res = conn->buf + conn->i;
+      conn->i = i + 2;
+      return res;
+    }
+  }
+  if (conn->read == sizeof(conn->buf))
+    return NULL;
+  memmove(conn->buf, conn->buf + conn->i, conn->read - conn->i);
+  conn->read -= conn->i;
+  conn->i = 0;
+  int read = recv(conn->fd, conn->buf + conn->read, sizeof(conn->buf) - conn->read, 0);
+  if (read == -1) {
+    perror("read");
+    return NULL;
+  }
+  conn->read += read;
+  goto retry;
 }

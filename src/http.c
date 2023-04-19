@@ -2,8 +2,9 @@
 #include <string.h>
 #include <ctype.h>
 #include "http.h"
+#include "server.h"
 
-char* http_method_str(HttpMethod m) {
+const char* http_method_str(HttpMethod m) {
   switch (m) {
   case HTTP_CONNECT: return "CONNECT";
   case HTTP_DELETE:  return "DELETE";
@@ -18,7 +19,7 @@ char* http_method_str(HttpMethod m) {
   }
 }
 
-char* http_status_str(int status) {
+const char* http_status_str(int status) {
   switch (status) {
   case 100: return "Continue";
   case 101: return "Switching protocols";
