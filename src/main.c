@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <linux/limits.h>
 #include "server.h"
@@ -8,25 +9,82 @@
 
 #define DEFAULT_PORT "8080"
 
-int http_handler(const HttpRequest *req, HttpResponse *res) {
-  printf("method=%s\n", http_method_str(req->method));
-  printf("uri=%s\n", req->uri);
-  for (HttpHeaders *h = req->headers; h; h = h->next)
-    printf("%s: %s\n", h->key, h->val);
+const char* mime_type(const char *path) {
+  static const char *MIME_TYPES[][2] = {
+    {".css", "text/css"},
+    {".gif", "image/gif"},
+    {".htm", "text/html"},
+    {".html", "text/html"},
+    {".jpeg", "image/jpg"},
+    {".jpg", "image/jpg"},
+    {".js", "application/javascript"},
+    {".json", "application/json"},
+    {".png", "image/png"},
+    {".txt", "text/plain"},
+  };
+  static const int MIME_LEN = sizeof (MIME_TYPES) / sizeof (MIME_TYPES[0]);
+  const char *ext = strrchr(path, '.');
+  if (ext && ext != path) {
+    for (int i = 0; i < MIME_LEN; i++)
+      if (strcasecmp(ext, MIME_TYPES[i][0]) == 0)
+        return MIME_TYPES[i][1];
+  }
+  return "application/octet-stream";
+}
 
-  const char *body =
-    "<!DOCTYPE html>\n"
-    "<html>\n"
-    "<head>\n"
-    "<title>Web C Test</title>\n"
-    "</head>\n"
-    "<body>\n"
-    "<h1>Wow, html document from web.c</h1>\n"
-    "</body>\n"
-    "</html>\n";
-  res->body_len = strlen(body);
-  res->body = strcpy(malloc(res->body_len + 1), body);
-  http_res_add_header(res, "x-webc", strdup("some value here"));
+int is_file(const char *path) {
+  struct stat sb;
+  if (stat(path, &sb) == -1)
+    return 0;
+  return S_ISREG(sb.st_mode);
+}
+
+char dir[PATH_MAX];
+
+int http_handler(const HttpRequest *req, HttpResponse *res) {
+  printf("Request: %s %s\n", http_method_str(req->method), req->uri);
+
+  if (req->method != HTTP_GET) {
+    res->status = 404;
+    return 0;
+  }
+
+  char file[PATH_MAX];
+  if (snprintf(file, PATH_MAX, "%s%s", dir, req->uri) < 0) {
+    res->status = 404;
+    return 0;
+  }
+
+  if (!is_file(file)) {
+    res->status = 404;
+    return 0;
+  }
+
+  FILE *f = fopen(file, "rb");
+  if (!f) {
+    perror(req->uri);
+    return 1;
+  }
+  if (fseek(f, 0, SEEK_END) != 0) {
+    perror("fseek");
+    return 1;
+  }
+  res->body_len = ftell(f);
+  rewind(f);
+
+  res->body = malloc(res->body_len + 1);
+  if (!res->body)
+    return 1;
+  if (fread(res->body, res->body_len, 1, f) != 1) {
+    perror("fread");
+    return 1;
+  }
+  if (fclose(f) != 0) {
+    perror("fclose");
+    return 1;
+  }
+
+  http_res_add_header(res, "content-type", strdup(mime_type(file)));
   res->status = 200;
   return 0;
 }
@@ -63,7 +121,6 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Unexpected extra positional arguments.\n");
     return print_usage(argv[0], 1);
   }
-  char dir[PATH_MAX];
   if (optind + 1 == argc) {
     if (!realpath(argv[optind], dir)) {
       perror("realpath");
@@ -73,7 +130,10 @@ int main(int argc, char *argv[]) {
     perror("getcwd");
     return 1;
   }
-  (void) dir; // TODO: use the DIR argument
+
+  int dirlen = strlen(dir);
+  if (dir[dirlen-1] == '/')
+    dir[dirlen-1] = '\0';
 
   HttpServer server;
   if (!http_server_init(&server, port))
