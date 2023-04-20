@@ -156,9 +156,11 @@ retry:
   conn->i = 0;
   int read = recv(conn->fd, conn->buf + conn->read, sizeof(conn->buf) - conn->read, 0);
   if (read == -1) {
-    perror("read");
+    perror("recv");
     return NULL;
   }
+  if (read == 0)
+    return NULL;
   conn->read += read;
   goto retry;
 }
