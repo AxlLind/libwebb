@@ -26,27 +26,25 @@ static int open_server_socket(const char *port) {
 
   int sockfd = -1;
   for (struct addrinfo *info = servinfo; info; info = info->ai_next) {
-    sockfd = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
-    if (sockfd == -1) {
-      perror("socket");
+    int fd = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
+    if (fd == -1)
       continue;
-    }
     int yes = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
       perror("setsockopt");
       return -1;
     }
-    if (bind(sockfd, info->ai_addr, info->ai_addrlen) == -1) {
-      close(sockfd);
-      perror("bind");
+    if (bind(fd, info->ai_addr, info->ai_addrlen) == -1) {
+      close(fd);
       continue;
     }
+    sockfd = fd;
     break;
   }
   freeaddrinfo(servinfo);
 
   if (sockfd == -1) {
-    fprintf(stderr, "failed to bind to an ip!\n");
+    perror("failed to bind to an ip");
     return -1;
   }
   if (listen(sockfd, BACKLOG) == -1) {
