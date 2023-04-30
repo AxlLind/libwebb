@@ -138,27 +138,27 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
 }
 
 const char* http_conn_next(HttpConnection *conn) {
-retry:
-  for (int i = conn->i; i < conn->read - 1; i++) {
-    if (memcmp(conn->buf + i, "\r\n", 2) == 0) {
-      conn->buf[i] = '\0';
-      char *res = conn->buf + conn->i;
-      conn->i = i + 2;
-      return res;
+  while (1) {
+    for (int i = conn->i; i < conn->read - 1; i++) {
+      if (memcmp(conn->buf + i, "\r\n", 2) == 0) {
+        conn->buf[i] = '\0';
+        char *res = conn->buf + conn->i;
+        conn->i = i + 2;
+        return res;
+      }
     }
+    if (conn->read == sizeof(conn->buf))
+      return NULL;
+    memmove(conn->buf, conn->buf + conn->i, conn->read - conn->i);
+    conn->read -= conn->i;
+    conn->i = 0;
+    int read = recv(conn->fd, conn->buf + conn->read, sizeof(conn->buf) - conn->read, 0);
+    if (read == -1) {
+      perror("recv");
+      return NULL;
+    }
+    if (read == 0)
+      return NULL;
+    conn->read += read;
   }
-  if (conn->read == sizeof(conn->buf))
-    return NULL;
-  memmove(conn->buf, conn->buf + conn->i, conn->read - conn->i);
-  conn->read -= conn->i;
-  conn->i = 0;
-  int read = recv(conn->fd, conn->buf + conn->read, sizeof(conn->buf) - conn->read, 0);
-  if (read == -1) {
-    perror("recv");
-    return NULL;
-  }
-  if (read == 0)
-    return NULL;
-  conn->read += read;
-  goto retry;
 }
