@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <linux/limits.h>
 #include "server.h"
 #include "http.h"
 
+#define PATH_MAX 4096
 #define DEFAULT_PORT "8080"
 
 const char* mime_type(const char *path) {
