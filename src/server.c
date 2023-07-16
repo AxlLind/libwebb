@@ -112,7 +112,7 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
     HttpRequest req;
     HttpResponse res = {0};
 
-    if (http_parse_req(&req, &conn)) {
+    if (http_parse_req(&conn, &req)) {
       fprintf(stderr, "failed to parse http request!\n");
       res.status = 400;
     } else if (handler_fn(&req, &res)) {
@@ -137,28 +137,27 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
   return 1;
 }
 
-const char* http_conn_next(HttpConnection *conn) {
+const char* http_conn_next(HttpConnection *c) {
   while (1) {
-    for (int i = conn->i; i < conn->read - 1; i++) {
-      if (memcmp(conn->buf + i, "\r\n", 2) == 0) {
-        conn->buf[i] = '\0';
-        char *res = conn->buf + conn->i;
-        conn->i = i + 2;
-        return res;
-      }
+    char *end = memmem(c->buf + c->i, c->read - c->i, "\r\n", 2);
+    if (end) {
+      *end = '\0';
+      int start = c->i;
+      c->i = end + 2 - c->buf;
+      return c->buf + start;
     }
-    if (conn->read == sizeof(conn->buf))
+    if (c->read == sizeof(c->buf))
       return NULL;
-    memmove(conn->buf, conn->buf + conn->i, conn->read - conn->i);
-    conn->read -= conn->i;
-    conn->i = 0;
-    int read = recv(conn->fd, conn->buf + conn->read, sizeof(conn->buf) - conn->read, 0);
+    memmove(c->buf, c->buf + c->i, c->read - c->i);
+    c->read -= c->i;
+    c->i = 0;
+    int read = recv(c->fd, c->buf + c->read, sizeof(c->buf) - c->read, 0);
     if (read == -1) {
       perror("recv");
       return NULL;
     }
     if (read == 0)
       return NULL;
-    conn->read += read;
+    c->read += read;
   }
 }

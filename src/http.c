@@ -153,7 +153,7 @@ static HttpMethod parse_http_method(const char *method, const int len) {
   return HTTP_INVALID;
 }
 
-int http_parse_req(HttpRequest *req, HttpConnection *conn) {
+int http_parse_req(HttpConnection *conn, HttpRequest *req) {
   memset(req, 0, sizeof(*req));
 
   // parse http verb, ends with a space
@@ -222,7 +222,7 @@ void http_res_free(HttpResponse *res) {
   free(res->body);
 }
 
-const char* http_get_header(HttpHeaders *h, char *key) {
+const char* http_get_header(const HttpHeaders *h, const char *key) {
   for (; h; h = h->next)
     if (strcasecmp(key, h->key))
       return h->val;

@@ -3,9 +3,9 @@
 
 typedef struct {
   int fd;
-  char buf[4096];
   int read;
   int i;
+  char buf[4096];
 } HttpConnection;
 
 typedef enum {
@@ -40,7 +40,7 @@ typedef struct {
   int body_len;
 } HttpResponse;
 
-int http_parse_req(HttpRequest *req, HttpConnection *conn);
+int http_parse_req(HttpConnection *conn, HttpRequest *req);
 
 const char* http_method_str(HttpMethod m);
 
@@ -50,8 +50,8 @@ void http_req_free(HttpRequest *req);
 
 void http_res_free(HttpResponse *res);
 
-const char* http_get_header(HttpHeaders *h, char *key);
+const char* http_get_header(const HttpHeaders *h, const char *key);
 
 void http_res_add_header(HttpResponse *res, char *key, char *val);
 
-#endif // HTTP_H
+#endif

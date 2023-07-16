@@ -29,7 +29,7 @@ const char* mime_type(const char *path) {
       if (strcasecmp(ext, MIME_TYPES[i][0]) == 0)
         return MIME_TYPES[i][1];
   }
-  return "application/octet-stream";
+  return "text/raw";
 }
 
 int is_file(const char *path) {
