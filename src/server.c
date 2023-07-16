@@ -115,7 +115,7 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
     if (http_parse_req(&req, &conn)) {
       fprintf(stderr, "failed to parse http request!\n");
       res.status = 400;
-    } if (handler_fn(&req, &res)) {
+    } else if (handler_fn(&req, &res)) {
       fprintf(stderr, "Request handler failed!");
       break;
     }
