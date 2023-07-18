@@ -30,6 +30,7 @@ typedef struct HttpHeaders {
 typedef struct {
   HttpMethod method;
   char *uri;
+  char *query;
   HttpHeaders *headers;
 } HttpRequest;
 

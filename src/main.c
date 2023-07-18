@@ -42,7 +42,7 @@ int is_file(const char *path) {
 char dir[PATH_MAX];
 
 int http_handler(const HttpRequest *req, HttpResponse *res) {
-  printf("Request: %s %s\n", http_method_str(req->method), req->uri);
+  printf("Request: %s %s %s\n", http_method_str(req->method), req->uri, req->query ? req->query : "");
 
   if (req->method != HTTP_GET) {
     res->status = 404;

@@ -167,15 +167,20 @@ int http_parse_req(HttpConnection *conn, HttpRequest *req) {
 
   // parse uri, ends with a space
   line = verb_end + 1;
-  char *uri_end = strchr(line, ' ');
-  if (!uri_end)
+  char *qs_end = strchr(line, ' '), *uri_end = qs_end;
+  if (!qs_end)
     return 1;
+  char *query_start = memchr(line, '?', qs_end - line);
+  if (query_start) {
+    req->query = strndup(query_start + 1, qs_end - query_start - 1);
+    uri_end = query_start;
+  }
   req->uri = uri_decode(line, uri_end - line);
   if (!req->uri)
     return 1;
 
   // parse the required HTTP/1.1 trailer
-  if (strcmp(uri_end + 1, "HTTP/1.1") != 0)
+  if (strcmp(qs_end + 1, "HTTP/1.1") != 0)
     return 1;
 
   // parse each header
@@ -215,6 +220,7 @@ static void free_headers(HttpHeaders *header, int allocated_keys) {
 void http_req_free(HttpRequest *req) {
   free_headers(req->headers, 1);
   free(req->uri);
+  free(req->query);
 }
 
 void http_res_free(HttpResponse *res) {
