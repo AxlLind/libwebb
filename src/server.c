@@ -104,12 +104,8 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
       break;
     }
 
-    HttpConnection conn = {
-      .fd = connfd,
-      .i = 0,
-      .read = 0,
-    };
-    HttpRequest req;
+    HttpConnection conn = { .fd = connfd };
+    HttpRequest req = {0};
     HttpResponse res = {0};
 
     if (http_parse_req(&conn, &req)) {
@@ -148,9 +144,11 @@ const char* http_conn_next(HttpConnection *c) {
     }
     if (c->read == sizeof(c->buf))
       return NULL;
+
     memmove(c->buf, c->buf + c->i, c->read - c->i);
     c->read -= c->i;
     c->i = 0;
+
     int read = recv(c->fd, c->buf + c->read, sizeof(c->buf) - c->read, 0);
     if (read == -1) {
       perror("recv");

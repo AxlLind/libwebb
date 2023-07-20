@@ -154,8 +154,6 @@ static HttpMethod parse_http_method(const char *method, const int len) {
 }
 
 int http_parse_req(HttpConnection *conn, HttpRequest *req) {
-  memset(req, 0, sizeof(*req));
-
   // parse http verb, ends with a space
   const char *line = http_conn_next(conn);
   if (!line)
