@@ -29,8 +29,12 @@ run: out/webc
 run-tests: $(TESTS:tests/test_%.c=run-test-%)
 
 #@ Format all source files, in place
-clang-format:
+format:
 	clang-format -i -style=file $$(find . -name '*.c' -or -name '*.h')
+
+#@ Lint all source files, using clang-tidy
+lint:
+	ls src/*.[ch] | xargs -i clang-tidy {} -- -Isrc -std=gnu99
 
 #@ Remove all make artifacts
 clean:
