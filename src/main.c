@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -127,7 +128,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  int dirlen = strlen(dir);
+  size_t dirlen = strlen(dir);
   if (dir[dirlen - 1] == '/')
     dir[dirlen - 1] = '\0';
 

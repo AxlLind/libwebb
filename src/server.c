@@ -1,4 +1,5 @@
 #include <netdb.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,7 +60,7 @@ int http_server_init(HttpServer *server, const char *port) {
   return server->sockfd == -1 ? 0 : 1;
 }
 
-static int send_all(int fd, const char *buf, int len) {
+static int send_all(int fd, const char *buf, size_t len) {
   for (int sent = -1; len; buf += sent, len -= sent) {
     sent = send(fd, buf, len, 0);
     if (sent == -1) {
@@ -85,7 +86,7 @@ static int send_response(int connfd, const HttpResponse *res) {
   bufptr += sprintf(bufptr, "server: webc 0.1\r\n");
   bufptr += sprintf(bufptr, "connection: close\r\n");
   if (res->body_len)
-    bufptr += sprintf(bufptr, "content-length: %d\r\n", res->body_len);
+    bufptr += sprintf(bufptr, "content-length: %zu\r\n", res->body_len);
   bufptr += sprintf(bufptr, "\r\n");
   if (send_all(connfd, buf, bufptr - buf))
     return 1;

@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include "http.h"
@@ -88,7 +89,7 @@ const char *http_status_str(int status) {
   }
 }
 
-static char *uri_decode(const char *s, int len) {
+static char *uri_decode(const char *s, size_t len) {
   // clang-format off
   static const char tbl[256] = {
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -121,7 +122,7 @@ static char *uri_decode(const char *s, int len) {
       char b = tbl[(unsigned char) s[++i]];
       if (a < 0 || b < 0)
         goto err;
-      c = (a << 4) | b;
+      c = (char) ((a << 4) | b);
     }
     *dst++ = c;
   }
@@ -133,7 +134,7 @@ err:
   return NULL;
 }
 
-static HttpMethod parse_http_method(const char *method, const int len) {
+static HttpMethod parse_http_method(const char *method, size_t len) {
   if (len == 7 && memcmp(method, "CONNECT", 7) == 0)
     return HTTP_CONNECT;
   if (len == 6 && memcmp(method, "DELETE", 6) == 0)
@@ -230,7 +231,7 @@ void http_res_free(HttpResponse *res) {
 
 const char *http_get_header(const HttpHeaders *h, const char *key) {
   for (; h; h = h->next)
-    if (strcasecmp(key, h->key))
+    if (strcasecmp(key, h->key) == 0)
       return h->val;
   return NULL;
 }

@@ -1,6 +1,8 @@
 #ifndef HTTP_H
 #define HTTP_H
 
+#include <stddef.h>
+
 typedef struct {
   int fd;
   int read;
@@ -38,7 +40,7 @@ typedef struct {
   int status;
   HttpHeaders *headers;
   char *body;
-  int body_len;
+  size_t body_len;
 } HttpResponse;
 
 int http_parse_req(HttpConnection *conn, HttpRequest *req);
