@@ -43,11 +43,11 @@ help:
 	@echo
 	@echo 'TARGET:'
 	@awk ' \
-		/(^| )[a-z-%]+:/ { \
-      if (desc !~ /^#@ /) next;	\
-			for (i=1; i <= NF; i++) \
-			  if ($$i ~ /:$$/) target = $$i; \
-			printf "  %s%s\n", target, substr(desc, 4, 100) \
+	  /(^| )[a-z-%]+:/ { \
+	    if (desc !~ /^#@ /) next;	\
+	    for (i=1; i <= NF; i++) \
+	      if ($$i ~ /:$$/) target = $$i; \
+	    printf "  %s%s\n", target, substr(desc, 4, 100) \
 	  } \
 	  { desc = $$0 } \
 	' $(MAKEFILE_LIST) | column -t -s ':'
