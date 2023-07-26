@@ -1,4 +1,3 @@
-#define _GNU_SOURCE // for memmem in string.h
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -136,12 +135,13 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
 
 const char* http_conn_next(HttpConnection *c) {
   while (1) {
-    char *end = memmem(c->buf + c->i, c->read - c->i, "\r\n", 2);
-    if (end) {
-      *end = '\0';
-      int start = c->i;
-      c->i = end + 2 - c->buf;
-      return c->buf + start;
+    for (int i = c->i; i < c->read-1; i++) {
+      if (memcmp(c->buf + i, "\r\n", 2) == 0) {
+        char *res = c->buf + c->i;
+        c->i = i+2;
+        c->buf[i] = '\0';
+        return res;
+      }
     }
     if (c->read == sizeof(c->buf))
       return NULL;
