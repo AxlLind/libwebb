@@ -1,6 +1,9 @@
 # make out (hihi) directory
 /out
 
+# vim
+*.swp
+
 # vscode config dir
 .vscode
 
