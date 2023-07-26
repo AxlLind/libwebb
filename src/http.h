@@ -5,8 +5,8 @@
 
 typedef struct {
   int fd;
-  int read;
-  int i;
+  size_t read;
+  size_t i;
   char buf[4096];
 } HttpConnection;
 
