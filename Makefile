@@ -21,14 +21,18 @@ $(TESTS:tests/test_%.c=run-test-%): run-test-%: out/test_%
 out/webc: src/main.c $(SOURCES:src/%.c=out/%.o)
 	$(CC) $(CFLAGS) $^ -o $@
 
+#@ Run the web server
 run: out/webc
 	./$< .
 
+#@ Run all tests
 run-tests: $(TESTS:tests/test_%.c=run-test-%)
 
+#@ Format all source files, in place
 clang-format:
 	clang-format -i -style=file $$(find . -name '*.c' -or -name '*.h')
 
+#@ Remove all make artifacts
 clean:
 	rm -rf out
 
