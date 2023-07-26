@@ -1,3 +1,4 @@
+#define _GNU_SOURCE // for memmem in string.h
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
