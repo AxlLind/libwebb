@@ -26,5 +26,8 @@ run: out/webc
 
 run-tests: $(TESTS:tests/test_%.c=run-test-%)
 
+clang-format:
+	clang-format -i -style=file $$(find . -name '*.c' -or -name '*.h')
+
 clean:
 	rm -rf out
