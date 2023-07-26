@@ -1,15 +1,15 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "server.h"
 #include "http.h"
+#include "server.h"
 
-#define PATH_MAX 4096
+#define PATH_MAX     4096
 #define DEFAULT_PORT "8080"
 
-const char* mime_type(const char *path) {
+const char *mime_type(const char *path) {
   static const char *MIME_TYPES[][2] = {
     {".css", "text/css"},
     {".gif", "image/gif"},
@@ -22,7 +22,7 @@ const char* mime_type(const char *path) {
     {".png", "image/png"},
     {".txt", "text/plain"},
   };
-  static const int MIME_LEN = sizeof (MIME_TYPES) / sizeof (MIME_TYPES[0]);
+  static const int MIME_LEN = sizeof(MIME_TYPES) / sizeof(MIME_TYPES[0]);
   const char *ext = strrchr(path, '.');
   if (ext && ext != path) {
     for (int i = 0; i < MIME_LEN; i++)
@@ -108,13 +108,9 @@ int main(int argc, char *argv[]) {
   char *port = DEFAULT_PORT;
   while ((opt = getopt(argc, argv, "p:h")) != -1) {
     switch (opt) {
-    case 'p':
-      port = optarg;
-      break;
-    case 'h':
-      return print_usage(argv[0], 0);
-    default:
-      return print_usage(argv[0], 1);
+    case 'p': port = optarg; break;
+    case 'h': return print_usage(argv[0], 0);
+    default: return print_usage(argv[0], 1);
     }
   }
   if (optind + 1 < argc) {
@@ -132,8 +128,8 @@ int main(int argc, char *argv[]) {
   }
 
   int dirlen = strlen(dir);
-  if (dir[dirlen-1] == '/')
-    dir[dirlen-1] = '\0';
+  if (dir[dirlen - 1] == '/')
+    dir[dirlen - 1] = '\0';
 
   HttpServer server;
   if (!http_server_init(&server, port))

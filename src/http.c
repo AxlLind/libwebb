@@ -1,25 +1,25 @@
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include "http.h"
 #include "server.h"
 
-const char* http_method_str(HttpMethod m) {
+const char *http_method_str(HttpMethod m) {
   switch (m) {
   case HTTP_CONNECT: return "CONNECT";
-  case HTTP_DELETE:  return "DELETE";
-  case HTTP_GET:     return "GET";
-  case HTTP_HEAD:    return "HEAD";
+  case HTTP_DELETE: return "DELETE";
+  case HTTP_GET: return "GET";
+  case HTTP_HEAD: return "HEAD";
   case HTTP_OPTIONS: return "OPTIONS";
-  case HTTP_PATCH:   return "PATCH";
-  case HTTP_POST:    return "POST";
-  case HTTP_PUT:     return "PUT";
-  case HTTP_TRACE:   return "TRACE";
-  default:           return "INVALID";
+  case HTTP_PATCH: return "PATCH";
+  case HTTP_POST: return "POST";
+  case HTTP_PUT: return "PUT";
+  case HTTP_TRACE: return "TRACE";
+  default: return "INVALID";
   }
 }
 
-const char* http_status_str(int status) {
+const char *http_status_str(int status) {
   switch (status) {
   case 100: return "Continue";
   case 101: return "Switching protocols";
@@ -84,11 +84,12 @@ const char* http_status_str(int status) {
   case 508: return "Loop Detected";
   case 510: return "Not Extended";
   case 511: return "Network Authentication Required";
-  default:  return NULL;
+  default: return NULL;
   }
 }
 
-static char* uri_decode(const char *s, int len) {
+static char *uri_decode(const char *s, int len) {
+  // clang-format off
   static const char tbl[256] = {
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -107,6 +108,7 @@ static char* uri_decode(const char *s, int len) {
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
   };
+  // clang-format on
   char *res = malloc(len + 1), *dst = res;
   for (int i = 0; i < len; i++) {
     char c = s[i];
@@ -226,7 +228,7 @@ void http_res_free(HttpResponse *res) {
   free(res->body);
 }
 
-const char* http_get_header(const HttpHeaders *h, const char *key) {
+const char *http_get_header(const HttpHeaders *h, const char *key) {
   for (; h; h = h->next)
     if (strcasecmp(key, h->key))
       return h->val;

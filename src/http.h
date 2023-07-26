@@ -43,15 +43,15 @@ typedef struct {
 
 int http_parse_req(HttpConnection *conn, HttpRequest *req);
 
-const char* http_method_str(HttpMethod m);
+const char *http_method_str(HttpMethod m);
 
-const char* http_status_str(int status);
+const char *http_status_str(int status);
 
 void http_req_free(HttpRequest *req);
 
 void http_res_free(HttpResponse *res);
 
-const char* http_get_header(const HttpHeaders *h, const char *key);
+const char *http_get_header(const HttpHeaders *h, const char *key);
 
 void http_res_add_header(HttpResponse *res, char *key, char *val);
 

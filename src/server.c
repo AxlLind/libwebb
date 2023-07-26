@@ -6,8 +6,8 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include "server.h"
 #include "http.h"
+#include "server.h"
 
 #define BACKLOG 10
 
@@ -104,7 +104,7 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
       break;
     }
 
-    HttpConnection conn = { .fd = connfd };
+    HttpConnection conn = {.fd = connfd};
     HttpRequest req = {0};
     HttpResponse res = {0};
 
@@ -133,12 +133,12 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
   return 1;
 }
 
-const char* http_conn_next(HttpConnection *c) {
+const char *http_conn_next(HttpConnection *c) {
   while (1) {
-    for (int i = c->i; i < c->read-1; i++) {
+    for (int i = c->i; i < c->read - 1; i++) {
       if (memcmp(c->buf + i, "\r\n", 2) == 0) {
         char *res = c->buf + c->i;
-        c->i = i+2;
+        c->i = i + 2;
         c->buf[i] = '\0';
         return res;
       }
