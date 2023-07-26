@@ -30,7 +30,11 @@ run-tests: $(TESTS:tests/test_%.c=run-test-%)
 
 #@ Format all source files, in place
 format:
-	clang-format -i -style=file $$(find . -name '*.c' -or -name '*.h')
+	clang-format -style=file -i $$(find . -name '*.c' -or -name '*.h')
+
+#@ Check if sources files are formatted
+check-format:
+	clang-format -style=file --dry-run -Werror $$(find . -name '*.c' -or -name '*.h')
 
 #@ Lint all source files, using clang-tidy
 lint:
