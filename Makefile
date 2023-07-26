@@ -1,5 +1,5 @@
 .PHONY: run clean
-.DEFAULT_GOAL := out/webc
+.DEFAULT_GOAL := help
 .EXTRA_PREREQS := $(MAKEFILE_LIST)
 
 SOURCES := $(filter-out src/main.c,$(wildcard src/*.c))
