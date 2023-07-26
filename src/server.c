@@ -151,7 +151,7 @@ const char *http_conn_next(HttpConnection *c) {
     c->read -= c->i;
     c->i = 0;
 
-    int read = recv(c->fd, c->buf + c->read, sizeof(c->buf) - c->read, 0);
+    ssize_t read = recv(c->fd, c->buf + c->read, sizeof(c->buf) - c->read, 0);
     if (read == -1) {
       perror("recv");
       return NULL;
