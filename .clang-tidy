@@ -2,7 +2,8 @@
 Checks: >
   clang-diagnostic-*,
   clang-analyzer-*,
-  bugprone-*
+  bugprone-*,
+  -bugprone-easily-swappable-parameters
 WarningsAsErrors: '*'
 HeaderFilterRegex: '*.h'
 FormatStyle: file
