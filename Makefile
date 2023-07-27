@@ -2,8 +2,9 @@
 .DEFAULT_GOAL := help
 .EXTRA_PREREQS := $(MAKEFILE_LIST)
 
-SOURCES := $(filter-out src/main.c,$(wildcard src/*.c))
-TESTS   := $(wildcard tests/test_*.c)
+SOURCES   := $(filter-out src/main.c,$(wildcard src/*.c))
+TESTS     := $(wildcard tests/test_*.c)
+ALL_FILES := $(wildcard src/*.c src/*.h tests/*.c)
 
 CC     := gcc
 CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow
@@ -15,11 +16,11 @@ $(SOURCES:src/%.c=out/%.o): out/%.o: src/%.c src/%.h
 $(TESTS:tests/test_%.c=out/test_%): out/test_%: tests/test_%.c $(SOURCES:src/%.c=out/%.o)
 	$(CC) $(CFLAGS) $^ -Isrc -o $@
 
-$(TESTS:tests/test_%.c=run-test-%): run-test-%: out/test_%
-	./$<
-
 out/webc: src/main.c $(SOURCES:src/%.c=out/%.o)
 	$(CC) $(CFLAGS) $^ -o $@
+
+$(TESTS:tests/test_%.c=run-test-%): run-test-%: out/test_%
+	./$<
 
 #@ Run the web server
 run: out/webc
@@ -30,15 +31,15 @@ test: $(TESTS:tests/test_%.c=run-test-%)
 
 #@ Format all source files, in place
 format:
-	clang-format -style=file -i $$(find . -name '*.c' -or -name '*.h')
+	clang-format -style=file -i $(ALL_FILES)
 
 #@ Check if sources files are formatted
 check-format:
-	clang-format -style=file --dry-run -Werror $$(find . -name '*.c' -or -name '*.h')
+	clang-format -style=file --dry-run -Werror $(ALL_FILES)
 
 #@ Lint all source files, using clang-tidy
 lint:
-	clang-tidy $(wildcard src/*.c src/*.h) -- -Isrc -std=gnu99
+	clang-tidy $(ALL_FILES) -- -Isrc -std=gnu99
 
 #@ Remove all make artifacts
 clean:
