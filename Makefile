@@ -38,7 +38,7 @@ check-format:
 
 #@ Lint all source files, using clang-tidy
 lint:
-	ls src/*.[ch] | xargs -i clang-tidy {} -- -Isrc -std=gnu99
+	clang-tidy $(wildcard src/*.c src/*.h) -- -Isrc -std=gnu99
 
 #@ Remove all make artifacts
 clean:
