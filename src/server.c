@@ -136,7 +136,7 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
 
 const char *http_conn_next(HttpConnection *c) {
   while (1) {
-    for (size_t i = c->i; i < c->read - 1; i++) {
+    for (size_t i = c->i; i + 1 < c->read; i++) {
       if (memcmp(c->buf + i, "\r\n", 2) == 0) {
         char *res = c->buf + c->i;
         c->i = i + 2;
