@@ -1,0 +1,6 @@
+#!/bin/bash
+set -euo pipefail
+
+make check-format
+make lint
+make run-tests
