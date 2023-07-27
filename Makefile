@@ -26,7 +26,7 @@ run: out/webc
 	./$< .
 
 #@ Run all tests
-run-tests: $(TESTS:tests/test_%.c=run-test-%)
+test: $(TESTS:tests/test_%.c=run-test-%)
 
 #@ Format all source files, in place
 format:

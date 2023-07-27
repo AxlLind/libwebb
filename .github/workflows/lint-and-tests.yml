@@ -10,4 +10,4 @@ jobs:
       - name: Lints
         run: make lint
       - name: Tests
-        run: make run-tests
+        run: make test
