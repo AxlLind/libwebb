@@ -1,4 +1,4 @@
-.PHONY: run clean
+.PHONY: run test format check-format lint clean help
 .DEFAULT_GOAL := help
 .EXTRA_PREREQS := $(MAKEFILE_LIST)
 
