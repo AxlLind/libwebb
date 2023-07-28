@@ -1,6 +1,4 @@
 #!/bin/bash
 set -euo pipefail
 
-make check-format
-make lint
-make test
+make fmt-check lint test

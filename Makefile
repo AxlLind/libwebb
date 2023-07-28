@@ -30,11 +30,11 @@ run: out/webc
 test: $(TESTS:tests/test_%.c=run-test-%)
 
 #@ Format all source files, in place
-format:
+fmt:
 	clang-format -style=file -i $(ALL_FILES)
 
 #@ Check if sources files are formatted
-check-format:
+fmt-check:
 	clang-format -style=file --dry-run -Werror $(ALL_FILES)
 
 #@ Lint all source files, using clang-tidy
