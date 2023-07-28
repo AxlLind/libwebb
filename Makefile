@@ -19,7 +19,7 @@ help:
 
 SOURCES   := $(filter-out src/main.c,$(wildcard src/*.c))
 TESTS     := $(wildcard tests/test_*.c)
-ALL_FILES := $(wildcard src/*.c src/*.h tests/*.c)
+ALL_FILES := $(wildcard src/*.c src/*.h tests/*.c tests/*.h)
 
 CC     := gcc
 CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow
