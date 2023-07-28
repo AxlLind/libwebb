@@ -151,13 +151,13 @@ const char *http_conn_next(HttpConnection *c) {
     c->read -= c->i;
     c->i = 0;
 
-    ssize_t read = recv(c->fd, c->buf + c->read, sizeof(c->buf) - c->read, 0);
-    if (read == -1) {
+    ssize_t nread = read(c->fd, c->buf + c->read, sizeof(c->buf) - c->read);
+    if (nread == -1) {
       perror("recv");
       return NULL;
     }
-    if (read == 0)
+    if (nread == 0)
       return NULL;
-    c->read += read;
+    c->read += nread;
   }
 }
