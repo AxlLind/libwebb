@@ -46,7 +46,7 @@ int str_conn_close(StrConnection *conn) {
   return 0;
 }
 
-void test_http_conn_next(void) {
+TEST(test_http_conn_next) {
   StrConnection conn;
   EXPECT_EQ(str_conn_open(&conn, "hello world\r\nhello\r\n\r\n"), 0);
 
@@ -58,4 +58,9 @@ void test_http_conn_next(void) {
   EXPECT_EQ(str_conn_close(&conn), 0);
 }
 
-TEST_MAIN(ADD_TEST(test_http_conn_next))
+TEST(test_if_one_is_one) {
+  EXPECT_EQ(1, 1);
+  EXPECT_EQ(1, 1);
+}
+
+TEST_MAIN(test_http_conn_next, test_if_one_is_one)

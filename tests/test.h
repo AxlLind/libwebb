@@ -28,16 +28,19 @@ int g_test_status;
     }                                                 \
   } while (0)
 
-#define ADD_TEST(test) \
-  { test, #test }
+typedef struct {
+  void (*fn)(void);
+  char *name;
+} TestInfo;
+
+#define TEST(name)                    \
+  void name##_fn(void);               \
+  TestInfo name = {name##_fn, #name}; \
+  void name##_fn(void)
 
 #define TEST_MAIN(...)                                                         \
   int main(void) {                                                             \
-    struct {                                                                   \
-      void (*fn)(void);                                                        \
-      char *name;                                                              \
-    } tests[] = {__VA_ARGS__};                                                 \
-                                                                               \
+    TestInfo tests[] = {__VA_ARGS__};                                          \
     int status = 0;                                                            \
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {            \
       g_test_status = 0;                                                       \
