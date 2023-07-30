@@ -60,6 +60,7 @@ TEST(test_http_conn_next) {
 
 TEST(test_if_one_is_one) {
   EXPECT_EQ(1, 1);
+  EXPECT_EQ(1, 1);
 }
 
 TEST_MAIN(test_http_conn_next, test_if_one_is_one)
