@@ -48,14 +48,14 @@ int str_conn_close(StrConnection *conn) {
 
 TEST(test_http_conn_next) {
   StrConnection conn;
-  EXPECT_EQ(str_conn_open(&conn, "hello world\r\nhello\r\n\r\n"), 0);
+  ASSERT_EQ(str_conn_open(&conn, "hello world\r\nhello\r\n\r\n"), 0);
 
   EXPECT_EQ_STR(http_conn_next(&conn.c), "hello world");
   EXPECT_EQ_STR(http_conn_next(&conn.c), "hello");
   EXPECT_EQ_STR(http_conn_next(&conn.c), "");
   EXPECT_EQ(http_conn_next(&conn.c), NULL);
 
-  EXPECT_EQ(str_conn_close(&conn), 0);
+  ASSERT_EQ(str_conn_close(&conn), 0);
 }
 
 TEST(test_if_one_is_one) {

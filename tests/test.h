@@ -8,24 +8,28 @@ int g_test_status;
 
 #define FILENAME (strrchr("/" __FILE__, '/') + 1)
 
-#define ERROR_MSG(fmt, ...) fprintf(stderr, "%s:%d - " fmt "\n", FILENAME, __LINE__, __VA_ARGS__)
-
-#define EXPECT_EQ(a, b)                       \
-  do {                                        \
-    if ((a) != (b)) {                         \
-      ERROR_MSG("expected %s == %s", #a, #b); \
-      g_test_status = 1;                      \
-    }                                         \
+#define ERROR(assert, fmt, ...)                                            \
+  do {                                                                     \
+    fprintf(stderr, "%s:%d - " fmt "\n", FILENAME, __LINE__, __VA_ARGS__); \
+    g_test_status = 1;                                                     \
+    if (assert)                                                            \
+      return;                                                              \
   } while (0)
+
+#define INTERNAL_EQ(a, b, assert)                  \
+  do {                                             \
+    if ((a) != (b))                                \
+      ERROR(assert, "expected: %s == %s", #a, #b); \
+  } while (0)
+
+#define EXPECT_EQ(a, b) INTERNAL_EQ(a, b, 0)
+#define ASSERT_EQ(a, b) INTERNAL_EQ(a, b, 1)
 
 #define EXPECT_EQ_STR(a, b)                           \
   do {                                                \
-    const char *aa = (a);                             \
-    const char *bb = (b);                             \
-    if (strcmp(aa, bb) != 0) {                        \
-      ERROR_MSG("expected \"%s\" == \"%s\"", aa, bb); \
-      g_test_status = 1;                              \
-    }                                                 \
+    const char *aa = (a), *bb = (b);                  \
+    if (strcmp(aa, bb) != 0)                          \
+      ERROR(0, "expected: \"%s\" == \"%s\"", aa, bb); \
   } while (0)
 
 typedef struct {
