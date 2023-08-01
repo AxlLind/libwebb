@@ -16,14 +16,17 @@ int g_test_status;
       return;                                                              \
   } while (0)
 
-#define INTERNAL_EQ(a, b, assert)                  \
-  do {                                             \
-    if ((a) != (b))                                \
-      ERROR(assert, "expected: %s == %s", #a, #b); \
+#define INTERNAL_CMP(a, op, b, assert)                  \
+  do {                                                  \
+    if (!((a) op(b)))                                   \
+      ERROR(assert, "expected: %s " #op " %s", #a, #b); \
   } while (0)
 
-#define EXPECT_EQ(a, b) INTERNAL_EQ(a, b, 0)
-#define ASSERT_EQ(a, b) INTERNAL_EQ(a, b, 1)
+#define EXPECT_EQ(a, b) INTERNAL_CMP(a, ==, b, 0)
+#define ASSERT_EQ(a, b) INTERNAL_CMP(a, ==, b, 1)
+
+#define EXPECT_NE(a, b) INTERNAL_CMP(a, !=, b, 0)
+#define ASSERT_NE(a, b) INTERNAL_CMP(a, !=, b, 1)
 
 #define EXPECT_EQ_STR(a, b)                           \
   do {                                                \
