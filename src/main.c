@@ -1,8 +1,10 @@
+#include <dirent.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include "http.h"
 #include "server.h"
@@ -33,14 +35,34 @@ const char *mime_type(const char *path) {
   return "text/raw";
 }
 
-int is_file(const char *path) {
-  struct stat sb;
-  if (stat(path, &sb) == -1)
-    return 0;
-  return S_ISREG(sb.st_mode);
-}
-
 char dir[PATH_MAX];
+
+int handle_dir(HttpResponse *res, const char *path, const char *uri) {
+  DIR *dp = opendir(path);
+  if (!dp) {
+    perror("could not open dir");
+    return 1;
+  }
+
+  char *html = malloc(65536), *s = html;
+  s += sprintf(s, "<!DOCTYPE html>\n<html>\n<body>\n<ul>\n");
+
+  struct dirent *entry;
+  while ((entry = readdir(dp))) {
+    if (strcmp(entry->d_name, ".") == 0)
+      continue;
+    if (strcmp(entry->d_name, "..") == 0)
+      continue;
+    s += sprintf(s, "<li><a href=\"%s%s%s\">%s</a></li>\n", uri, uri[strlen(uri) - 1] == '/' ? "" : "/", entry->d_name, entry->d_name, );
+  }
+  closedir(dp);
+
+  s += sprintf(s, "</ul>\n</body>\n</html>\n");
+  res->body_len = s - html;
+  res->body = html;
+  res->status = 200;
+  return 0;
+}
 
 int http_handler(const HttpRequest *req, HttpResponse *res) {
   printf("Request: %s %s %s\n", http_method_str(req->method), req->uri, req->query ? req->query : "");
@@ -56,7 +78,16 @@ int http_handler(const HttpRequest *req, HttpResponse *res) {
     return 0;
   }
 
-  if (!is_file(file)) {
+  struct stat sb;
+  if (stat(file, &sb) == -1) {
+    res->status = 404;
+    return 0;
+  }
+
+  if (S_ISDIR(sb.st_mode))
+    return handle_dir(res, file, req->uri);
+
+  if (!S_ISREG(sb.st_mode)) {
     res->status = 404;
     return 0;
   }
