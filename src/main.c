@@ -53,7 +53,13 @@ int handle_dir(HttpResponse *res, const char *path, const char *uri) {
       continue;
     if (strcmp(entry->d_name, "..") == 0)
       continue;
-    s += sprintf(s, "<li><a href=\"%s%s%s\">%s</a></li>\n", uri, uri[strlen(uri) - 1] == '/' ? "" : "/", entry->d_name, entry->d_name, );
+    s += sprintf(
+      s,
+      "<li><a href=\"%s%s%s\">%s</a></li>\n",
+      uri,
+      uri[strlen(uri) - 1] == '/' ? "" : "/",
+      entry->d_name,
+      entry->d_name);
   }
   closedir(dp);
 
