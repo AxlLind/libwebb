@@ -90,9 +90,26 @@ TEST(test_parse_minimal_request) {
   ASSERT_EQ(str_conn_close(&conn), 0);
 }
 
+TEST(test_missing_final_newline) {
+  const char *request = "GET / HTTP/1.1\r\n";
+  StrConnection conn;
+  HttpRequest req = {0};
+  ASSERT_EQ(str_conn_open(&conn, request), 0);
+
+  EXPECT_NE(http_parse_req(&conn.c, &req), 0);
+  http_req_free(&req);
+
+  ASSERT_EQ(str_conn_close(&conn), 0);
+}
+
 TEST(test_if_one_is_one) {
   EXPECT_EQ(1, 1);
   EXPECT_EQ(1, 1);
 }
 
-TEST_MAIN(test_http_conn_next, test_parse_curl_example, test_parse_minimal_request, test_if_one_is_one)
+TEST_MAIN(
+  test_http_conn_next,
+  test_parse_curl_example,
+  test_parse_minimal_request,
+  test_missing_final_newline,
+  test_if_one_is_one)
