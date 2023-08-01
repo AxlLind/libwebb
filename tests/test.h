@@ -28,6 +28,18 @@ int g_test_status;
 #define EXPECT_NE(a, b) INTERNAL_CMP(a, !=, b, 0)
 #define ASSERT_NE(a, b) INTERNAL_CMP(a, !=, b, 1)
 
+#define EXPECT_LT(a, b) INTERNAL_CMP(a, <, b, 0)
+#define ASSERT_LT(a, b) INTERNAL_CMP(a, <, b, 1)
+
+#define EXPECT_LE(a, b) INTERNAL_CMP(a, <=, b, 0)
+#define ASSERT_LE(a, b) INTERNAL_CMP(a, <=, b, 1)
+
+#define EXPECT_GT(a, b) INTERNAL_CMP(a, >, b, 0)
+#define ASSERT_GT(a, b) INTERNAL_CMP(a, >, b, 1)
+
+#define EXPECT_GE(a, b) INTERNAL_CMP(a, >=, b, 0)
+#define ASSERT_GE(a, b) INTERNAL_CMP(a, >=, b, 1)
+
 #define EXPECT_EQ_STR(a, b)                           \
   do {                                                \
     const char *aa = (a), *bb = (b);                  \
