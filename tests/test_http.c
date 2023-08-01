@@ -51,7 +51,7 @@ TEST(test_http_conn_next) {
   ASSERT_EQ(str_conn_close(&conn), 0);
 }
 
-TEST(test_http_parse) {
+TEST(test_parse_curl_example) {
   const char *request =
     "GET /test/a.txt?abc=2 HTTP/1.1\r\n"
     "Host: localhost:8080\r\n"
@@ -59,10 +59,10 @@ TEST(test_http_parse) {
     "Accept: */*\r\n"
     "\r\n";
   StrConnection conn;
-  ASSERT_EQ(str_conn_open(&conn, request), 0);
-
   HttpRequest req = {0};
+  ASSERT_EQ(str_conn_open(&conn, request), 0);
   ASSERT_EQ(http_parse_req(&conn.c, &req), 0);
+
   EXPECT_EQ(req.method, HTTP_GET);
   EXPECT_EQ_STR(req.uri, "/test/a.txt");
   EXPECT_EQ_STR(req.query, "abc=2");
@@ -74,9 +74,25 @@ TEST(test_http_parse) {
   ASSERT_EQ(str_conn_close(&conn), 0);
 }
 
+TEST(test_parse_minimal_request) {
+  const char *request = "GET / HTTP/1.1\r\n\r\n";
+  StrConnection conn;
+  HttpRequest req = {0};
+  ASSERT_EQ(str_conn_open(&conn, request), 0);
+  ASSERT_EQ(http_parse_req(&conn.c, &req), 0);
+
+  EXPECT_EQ(req.method, HTTP_GET);
+  EXPECT_EQ_STR(req.uri, "/");
+  EXPECT_EQ(req.query, NULL);
+  EXPECT_EQ(req.headers, NULL);
+  http_req_free(&req);
+
+  ASSERT_EQ(str_conn_close(&conn), 0);
+}
+
 TEST(test_if_one_is_one) {
   EXPECT_EQ(1, 1);
   EXPECT_EQ(1, 1);
 }
 
-TEST_MAIN(test_http_conn_next, test_http_parse, test_if_one_is_one)
+TEST_MAIN(test_http_conn_next, test_parse_curl_example, test_parse_minimal_request, test_if_one_is_one)
