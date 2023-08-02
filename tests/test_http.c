@@ -4,8 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 #include "http.h"
+#include "libtest.h"
 #include "server.h"
-#include "test.h"
 
 #define TMP_NAME "/tmp/webc-XXXXXX"
 
