@@ -34,9 +34,12 @@ int str_conn_open(StrConnection *conn, const char *s) {
 }
 
 int str_conn_reopen(StrConnection *conn, const char *s) {
+  int fd = conn->c.fd;
+  memset(&conn->c, 0, sizeof(conn->c));
+  conn->c.fd = fd;
   ssize_t len = (ssize_t) strlen(s);
   CHECK(ftruncate(conn->c.fd, 0) != -1, "failed to truncate tmpfile");
-  CHECK(write(conn->c.fd, s, len) == len, "failed to write to tmpfile");
+  CHECK(pwrite(conn->c.fd, s, len, 0) == len, "failed to write to tmpfile");
   CHECK(lseek(conn->c.fd, 0, SEEK_SET) != -1, "failed to lseek tmpfile");
   return 0;
 }
