@@ -185,6 +185,7 @@ int http_parse_req(HttpConnection *conn, HttpRequest *req) {
     return 1;
 
   // parse each header
+  req->headers = NULL;
   while (1) {
     line = http_conn_next(conn);
     if (!line)
