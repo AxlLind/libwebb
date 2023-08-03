@@ -131,15 +131,9 @@ TEST(test_invalid_http_version) {
   ASSERT_EQ(str_conn_close(&conn), 0);
 }
 
-TEST(test_if_one_is_one) {
-  EXPECT_EQ(1, 1);
-  EXPECT_EQ(1, 1);
-}
-
 TEST_MAIN(
   test_http_conn_next,
   test_parse_curl_example,
   test_parse_minimal_request,
   test_missing_final_newline,
-  test_invalid_http_version,
-  test_if_one_is_one)
+  test_invalid_http_version)
