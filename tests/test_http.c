@@ -33,6 +33,14 @@ int str_conn_open(StrConnection *conn, const char *s) {
   return 0;
 }
 
+int str_conn_reopen(StrConnection *conn, const char *s) {
+  ssize_t len = (ssize_t) strlen(s);
+  CHECK(ftruncate(conn->c.fd, 0) != -1, "failed to truncate tmpfile");
+  CHECK(write(conn->c.fd, s, len) == len, "failed to write to tmpfile");
+  CHECK(lseek(conn->c.fd, 0, SEEK_SET) != -1, "failed to lseek tmpfile");
+  return 0;
+}
+
 int str_conn_close(StrConnection *conn) {
   CHECK(unlink(conn->path) != -1, "failed to unlink tmpfile");
   CHECK(close(conn->c.fd) != -1, "failed to close tmpfile");
@@ -102,6 +110,27 @@ TEST(test_missing_final_newline) {
   ASSERT_EQ(str_conn_close(&conn), 0);
 }
 
+TEST(test_invalid_http_version) {
+  StrConnection conn;
+  HttpRequest req;
+  ASSERT_EQ(str_conn_open(&conn, ""), 0);
+
+#define INVALID_VERSION_TEST(version)                                \
+  ASSERT_EQ(str_conn_reopen(&conn, "GET / " version "\r\n\r\n"), 0); \
+  memset(&req, 0, sizeof(req));                                      \
+  EXPECT_NE(http_parse_req(&conn.c, &req), 0);                       \
+  http_req_free(&req)
+
+  INVALID_VERSION_TEST("");
+  INVALID_VERSION_TEST("HTTP/1.0");
+  INVALID_VERSION_TEST("HTTP/2.0");
+  INVALID_VERSION_TEST("http/1.1");
+  INVALID_VERSION_TEST("HTTP 1.1");
+  INVALID_VERSION_TEST("FTP/1.1");
+
+  ASSERT_EQ(str_conn_close(&conn), 0);
+}
+
 TEST(test_if_one_is_one) {
   EXPECT_EQ(1, 1);
   EXPECT_EQ(1, 1);
@@ -112,4 +141,5 @@ TEST_MAIN(
   test_parse_curl_example,
   test_parse_minimal_request,
   test_missing_final_newline,
+  test_invalid_http_version,
   test_if_one_is_one)
