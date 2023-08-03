@@ -52,9 +52,9 @@ typedef struct {
   char *name;
 } TestInfo;
 
-#define TEST(name)                    \
-  void name##_fn(void);               \
-  TestInfo name = {name##_fn, #name}; \
+#define TEST(name)                           \
+  void name##_fn(void);                      \
+  static TestInfo name = {name##_fn, #name}; \
   void name##_fn(void)
 
 #define TEST_MAIN(...)                                                         \
