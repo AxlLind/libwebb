@@ -106,7 +106,7 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
     }
 
     HttpConnection conn = {.fd = connfd};
-    HttpRequest req = {0};
+    HttpRequest req;
     HttpResponse res = {0};
 
     if (http_parse_req(&conn, &req)) {
