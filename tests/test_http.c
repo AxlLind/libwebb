@@ -120,7 +120,6 @@ TEST(test_invalid_http_version) {
 
 #define INVALID_VERSION_TEST(version)                                \
   ASSERT_EQ(str_conn_reopen(&conn, "GET / " version "\r\n\r\n"), 0); \
-  memset(&req, 0, sizeof(req));                                      \
   EXPECT_NE(http_parse_req(&conn.c, &req), 0);                       \
   http_req_free(&req)
 
@@ -134,9 +133,30 @@ TEST(test_invalid_http_version) {
   ASSERT_EQ(str_conn_close(&conn), 0);
 }
 
+TEST(test_multiple_requests_per_connection) {
+  const char *request =
+    "GET / HTTP/1.1\r\n\r\n"
+    "GET / HTTP/1.1\r\n\r\n"
+    "GET / HTTP/1.1\r\n\r\n";
+  StrConnection conn;
+  HttpRequest req;
+
+  ASSERT_EQ(str_conn_open(&conn, request), 0);
+
+  for (int i = 0; i < 3; i++) {
+    EXPECT_EQ(http_parse_req(&conn.c, &req), 0);
+    http_req_free(&req);
+  }
+  EXPECT_NE(http_parse_req(&conn.c, &req), 0);
+  http_req_free(&req);
+
+  ASSERT_EQ(str_conn_close(&conn), 0);
+}
+
 TEST_MAIN(
   test_http_conn_next,
   test_parse_curl_example,
   test_parse_minimal_request,
   test_missing_final_newline,
-  test_invalid_http_version)
+  test_invalid_http_version,
+  test_multiple_requests_per_connection)
