@@ -50,8 +50,10 @@ int str_conn_close(StrConnection *conn) {
   return 0;
 }
 
+static StrConnection conn;
+static HttpRequest req;
+
 TEST(test_http_conn_next) {
-  StrConnection conn;
   ASSERT_EQ(str_conn_open(&conn, "hello world\r\nhello\r\n\r\n"), 0);
 
   EXPECT_EQ_STR(http_conn_next(&conn.c), "hello world");
@@ -69,8 +71,6 @@ TEST(test_parse_curl_example) {
     "User-Agent: curl/7.77.0\r\n"
     "Accept: */*\r\n"
     "\r\n";
-  StrConnection conn;
-  HttpRequest req = {0};
   ASSERT_EQ(str_conn_open(&conn, request), 0);
   ASSERT_EQ(http_parse_req(&conn.c, &req), 0);
 
@@ -87,8 +87,6 @@ TEST(test_parse_curl_example) {
 
 TEST(test_parse_minimal_request) {
   const char *request = "GET / HTTP/1.1\r\n\r\n";
-  StrConnection conn;
-  HttpRequest req = {0};
   ASSERT_EQ(str_conn_open(&conn, request), 0);
   ASSERT_EQ(http_parse_req(&conn.c, &req), 0);
 
@@ -103,8 +101,6 @@ TEST(test_parse_minimal_request) {
 
 TEST(test_missing_final_newline) {
   const char *request = "GET / HTTP/1.1\r\n";
-  StrConnection conn;
-  HttpRequest req = {0};
   ASSERT_EQ(str_conn_open(&conn, request), 0);
 
   EXPECT_NE(http_parse_req(&conn.c, &req), 0);
@@ -114,8 +110,6 @@ TEST(test_missing_final_newline) {
 }
 
 TEST(test_invalid_http_version) {
-  StrConnection conn;
-  HttpRequest req;
   ASSERT_EQ(str_conn_open(&conn, ""), 0);
 
 #define INVALID_VERSION_TEST(version)                                \
@@ -138,13 +132,14 @@ TEST(test_multiple_requests_per_connection) {
     "GET / HTTP/1.1\r\n\r\n"
     "GET / HTTP/1.1\r\n\r\n"
     "GET / HTTP/1.1\r\n\r\n";
-  StrConnection conn;
-  HttpRequest req;
-
   ASSERT_EQ(str_conn_open(&conn, request), 0);
 
   for (int i = 0; i < 3; i++) {
     EXPECT_EQ(http_parse_req(&conn.c, &req), 0);
+    EXPECT_EQ(req.method, HTTP_GET);
+    EXPECT_EQ_STR(req.uri, "/");
+    EXPECT_EQ(req.query, NULL);
+    EXPECT_EQ(req.headers, NULL);
     http_req_free(&req);
   }
   EXPECT_NE(http_parse_req(&conn.c, &req), 0);
