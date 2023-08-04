@@ -4,14 +4,12 @@
 #include <stddef.h>
 #include <stdio.h>
 
-int g_test_status;
-
 #define FILENAME (strrchr("/" __FILE__, '/') + 1)
 
 #define ERROR(assert, fmt, ...)                                            \
   do {                                                                     \
     fprintf(stderr, "%s:%d - " fmt "\n", FILENAME, __LINE__, __VA_ARGS__); \
-    g_test_status = 1;                                                     \
+    *test_failed = 1;                                                      \
     if (assert)                                                            \
       return;                                                              \
   } while (0)
@@ -48,27 +46,27 @@ int g_test_status;
   } while (0)
 
 typedef struct {
-  void (*fn)(void);
+  void (*fn)(int *);
   char *name;
 } TestInfo;
 
-#define TEST(name)                           \
-  void name##_fn(void);                      \
-  static TestInfo name = {name##_fn, #name}; \
-  void name##_fn(void)
+#define TEST(name)                                 \
+  static void name##_fn(int *);                    \
+  static const TestInfo name = {name##_fn, #name}; \
+  static void name##_fn(int *test_failed)
 
-#define TEST_MAIN(...)                                                         \
-  int main(void) {                                                             \
-    TestInfo tests[] = {__VA_ARGS__};                                          \
-    int status = 0;                                                            \
-    for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {            \
-      g_test_status = 0;                                                       \
-      tests[i].fn();                                                           \
-      printf("%s - %s\n", g_test_status ? "FAILED" : "PASSED", tests[i].name); \
-      status |= g_test_status;                                                 \
-    }                                                                          \
-    printf("%s: %s\n", FILENAME, status ? "FAILED" : "PASSED");                \
-    return status;                                                             \
+#define TEST_MAIN(...)                                                       \
+  int main(void) {                                                           \
+    const TestInfo tests[] = {__VA_ARGS__};                                  \
+    int failed_tests = 0;                                                    \
+    for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {          \
+      int test_failed = 0;                                                   \
+      tests[i].fn(&test_failed);                                             \
+      printf("%s - %s\n", test_failed ? "FAILED" : "PASSED", tests[i].name); \
+      failed_tests += test_failed;                                           \
+    }                                                                        \
+    printf("%s: %s\n", FILENAME, failed_tests ? "FAILED" : "PASSED");        \
+    return failed_tests ? 1 : 0;                                             \
   }
 
 #endif
