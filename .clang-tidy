@@ -9,11 +9,14 @@ Checks: >
   performance-*,
   readability-*,
   -bugprone-easily-swappable-parameters,
+  -readability-identifier-length,
   -readability-isolate-declaration,
   -readability-magic-numbers,
 CheckOptions:
   - key: readability-braces-around-statements.ShortStatementLines
     value: 2
+  - key: readability-function-cognitive-complexity.IgnoreMacros
+    value: true
 WarningsAsErrors: '*'
 HeaderFilterRegex: ''
 FormatStyle: file

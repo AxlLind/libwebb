@@ -110,14 +110,14 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
     HttpResponse res = {0};
 
     if (http_parse_req(&conn, &req)) {
-      fprintf(stderr, "failed to parse http request!\n");
+      (void) fprintf(stderr, "failed to parse http request!\n");
       res.status = 400;
     } else if (handler_fn(&req, &res)) {
-      fprintf(stderr, "Request handler failed!");
+      (void) fprintf(stderr, "Request handler failed!");
       break;
     }
     if (send_response(connfd, &res)) {
-      fprintf(stderr, "Sending response failed!\n");
+      (void) fprintf(stderr, "Sending response failed!\n");
       break;
     }
     http_req_free(&req);

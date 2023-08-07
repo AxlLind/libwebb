@@ -6,12 +6,12 @@
 
 #define FILENAME (strrchr("/" __FILE__, '/') + 1)
 
-#define ERROR(assert, fmt, ...)                                            \
-  do {                                                                     \
-    fprintf(stderr, "%s:%d - " fmt "\n", FILENAME, __LINE__, __VA_ARGS__); \
-    *test_failed = 1;                                                      \
-    if (assert)                                                            \
-      return;                                                              \
+#define ERROR(assert, fmt, ...)                                                   \
+  do {                                                                            \
+    (void) fprintf(stderr, "%s:%d - " fmt "\n", FILENAME, __LINE__, __VA_ARGS__); \
+    *test_failed = 1;                                                             \
+    if (assert)                                                                   \
+      return;                                                                     \
   } while (0)
 
 #define INTERNAL_CMP(a, op, b, assert)                  \
@@ -55,18 +55,18 @@ typedef struct {
   static const TestInfo name = {name##_fn, #name}; \
   static void name##_fn(int *test_failed)
 
-#define TEST_MAIN(...)                                                       \
-  int main(void) {                                                           \
-    const TestInfo tests[] = {__VA_ARGS__};                                  \
-    int failed_tests = 0;                                                    \
-    for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {          \
-      int test_failed = 0;                                                   \
-      tests[i].fn(&test_failed);                                             \
-      printf("%s - %s\n", test_failed ? "FAILED" : "PASSED", tests[i].name); \
-      failed_tests += test_failed;                                           \
-    }                                                                        \
-    printf("%s: %s\n", FILENAME, failed_tests ? "FAILED" : "PASSED");        \
-    return failed_tests ? 1 : 0;                                             \
+#define TEST_MAIN(...)                                                              \
+  int main(void) {                                                                  \
+    const TestInfo tests[] = {__VA_ARGS__};                                         \
+    int failed_tests = 0;                                                           \
+    for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {                 \
+      int test_failed = 0;                                                          \
+      tests[i].fn(&test_failed);                                                    \
+      (void) printf("%s - %s\n", test_failed ? "FAILED" : "PASSED", tests[i].name); \
+      failed_tests += test_failed;                                                  \
+    }                                                                               \
+    (void) printf("%s: %s\n", FILENAME, failed_tests ? "FAILED" : "PASSED");        \
+    return failed_tests ? 1 : 0;                                                    \
   }
 
 #endif
