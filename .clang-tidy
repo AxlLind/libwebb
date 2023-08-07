@@ -1,9 +1,17 @@
 ---
 Checks: >
-  clang-diagnostic-*,
-  clang-analyzer-*,
   bugprone-*,
-  -bugprone-easily-swappable-parameters
+  cert-*,
+  clang-analyzer-*,
+  clang-diagnostic-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  -bugprone-easily-swappable-parameters,
+  -readability-braces-around-statements,
+  -readability-isolate-declaration,
+  -readability-magic-numbers,
 WarningsAsErrors: '*'
 HeaderFilterRegex: ''
 FormatStyle: file
