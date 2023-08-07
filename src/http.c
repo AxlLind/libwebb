@@ -232,9 +232,10 @@ void http_res_free(HttpResponse *res) {
 }
 
 const char *http_get_header(const HttpHeaders *h, const char *key) {
-  for (; h; h = h->next)
+  for (; h; h = h->next) {
     if (strcasecmp(key, h->key) == 0)
       return h->val;
+  }
   return NULL;
 }
 

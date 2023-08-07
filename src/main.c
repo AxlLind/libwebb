@@ -28,9 +28,10 @@ const char *mime_type(const char *path) {
   static const int MIME_LEN = sizeof(MIME_TYPES) / sizeof(MIME_TYPES[0]);
   const char *ext = strrchr(path, '.');
   if (ext && ext != path) {
-    for (int i = 0; i < MIME_LEN; i++)
+    for (int i = 0; i < MIME_LEN; i++) {
       if (strcasecmp(ext, MIME_TYPES[i][0]) == 0)
         return MIME_TYPES[i][1];
+    }
   }
   return "text/raw";
 }
