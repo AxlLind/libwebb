@@ -8,7 +8,7 @@ help:
 	@echo
 	@echo 'TARGET:'
 	@awk '                                              \
-	  /(^| )[a-z-%]+:/ {                                \
+	  /(^| )[a-z%-]+:/ {                                \
 	    if (desc !~ /^#@ /) next;                       \
 	    for (i=1; i <= NF; i++)                         \
 	      if ($$i ~ /:$$/) target = $$i;                \
