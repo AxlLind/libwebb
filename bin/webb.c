@@ -6,8 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "http.h"
-#include "server.h"
+#include "webb/webb.h"
 
 #define PATH_MAX     4096
 #define DEFAULT_PORT "8080"
@@ -38,7 +37,7 @@ const char *mime_type(const char *path) {
 
 char dir[PATH_MAX];
 
-int handle_dir(HttpResponse *res, const char *path, const char *uri) {
+int handle_dir(WebbResponse *res, const char *path, const char *uri) {
   DIR *dp = opendir(path);
   if (!dp) {
     perror("could not open dir");
@@ -71,10 +70,10 @@ int handle_dir(HttpResponse *res, const char *path, const char *uri) {
   return 0;
 }
 
-int http_handler(const HttpRequest *req, HttpResponse *res) {
-  (void) printf("Request: %s %s %s\n", http_method_str(req->method), req->uri, req->query ? req->query : "");
+int http_handler(const WebbRequest *req, WebbResponse *res) {
+  (void) printf("Request: %s %s %s\n", webb_method_str(req->method), req->uri, req->query ? req->query : "");
 
-  if (req->method != HTTP_GET) {
+  if (req->method != WEBB_GET) {
     res->status = 404;
     return 0;
   }
@@ -123,7 +122,7 @@ int http_handler(const HttpRequest *req, HttpResponse *res) {
     return 1;
   }
 
-  http_res_add_header(res, "content-type", strdup(mime_type(file)));
+  webb_set_header(res, "content-type", strdup(mime_type(file)));
   res->status = 200;
   return 0;
 }
@@ -170,9 +169,10 @@ int main(int argc, char *argv[]) {
   if (dir[dirlen - 1] == '/')
     dir[dirlen - 1] = '\0';
 
-  HttpServer server;
-  if (!http_server_init(&server, port))
+  WebbServer server;
+  if (webb_server_init(&server, port) != 0)
     return 1;
+
   (void) printf("Server listening on port %s...\n", port);
-  return http_server_run(&server, http_handler);
+  return webb_server_run(&server, http_handler);
 }

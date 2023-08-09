@@ -2,25 +2,25 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "http.h"
-#include "server.h"
+#include "internal.h"
+#include "webb/webb.h"
 
-const char *http_method_str(HttpMethod m) {
+const char *webb_method_str(WebbMethod m) {
   switch (m) {
-  case HTTP_CONNECT: return "CONNECT";
-  case HTTP_DELETE: return "DELETE";
-  case HTTP_GET: return "GET";
-  case HTTP_HEAD: return "HEAD";
-  case HTTP_OPTIONS: return "OPTIONS";
-  case HTTP_PATCH: return "PATCH";
-  case HTTP_POST: return "POST";
-  case HTTP_PUT: return "PUT";
-  case HTTP_TRACE: return "TRACE";
+  case WEBB_CONNECT: return "CONNECT";
+  case WEBB_DELETE: return "DELETE";
+  case WEBB_GET: return "GET";
+  case WEBB_HEAD: return "HEAD";
+  case WEBB_OPTIONS: return "OPTIONS";
+  case WEBB_PATCH: return "PATCH";
+  case WEBB_POST: return "POST";
+  case WEBB_PUT: return "PUT";
+  case WEBB_TRACE: return "TRACE";
   default: return "INVALID";
   }
 }
 
-const char *http_status_str(int status) {
+const char *webb_status_str(int status) {
   switch (status) {
   case 100: return "Continue";
   case 101: return "Switching protocols";
@@ -134,29 +134,29 @@ err:
   return NULL;
 }
 
-static HttpMethod parse_http_method(const char *method, size_t len) {
+static WebbMethod parse_http_method(const char *method, size_t len) {
   if (len == 7 && memcmp(method, "CONNECT", 7) == 0)
-    return HTTP_CONNECT;
+    return WEBB_CONNECT;
   if (len == 6 && memcmp(method, "DELETE", 6) == 0)
-    return HTTP_DELETE;
+    return WEBB_DELETE;
   if (len == 3 && memcmp(method, "GET", 3) == 0)
-    return HTTP_GET;
+    return WEBB_GET;
   if (len == 4 && memcmp(method, "HEAD", 4) == 0)
-    return HTTP_HEAD;
+    return WEBB_HEAD;
   if (len == 7 && memcmp(method, "OPTIONS", 7) == 0)
-    return HTTP_OPTIONS;
+    return WEBB_OPTIONS;
   if (len == 5 && memcmp(method, "PATCH", 5) == 0)
-    return HTTP_PATCH;
+    return WEBB_PATCH;
   if (len == 4 && memcmp(method, "POST", 4) == 0)
-    return HTTP_POST;
+    return WEBB_POST;
   if (len == 3 && memcmp(method, "PUT", 3) == 0)
-    return HTTP_PUT;
+    return WEBB_PUT;
   if (len == 5 && memcmp(method, "TRACE", 5) == 0)
-    return HTTP_TRACE;
-  return HTTP_INVALID;
+    return WEBB_TRACE;
+  return WEBB_INVALID;
 }
 
-int http_parse_req(HttpConnection *conn, HttpRequest *req) {
+int http_parse_req(HttpConnection *conn, WebbRequest *req) {
   memset(req, 0, sizeof(*req));
 
   // parse http verb, ends with a space
@@ -165,7 +165,7 @@ int http_parse_req(HttpConnection *conn, HttpRequest *req) {
     return 1;
   char *verb_end = strchr(line, ' ');
   req->method = parse_http_method(line, verb_end ? verb_end - line : 0);
-  if (req->method == HTTP_INVALID)
+  if (req->method == WEBB_INVALID)
     return 1;
 
   // parse uri, ends with a space
@@ -200,7 +200,7 @@ int http_parse_req(HttpConnection *conn, HttpRequest *req) {
     if (!header_mid)
       return 1;
 
-    HttpHeaders *header = malloc(sizeof(HttpHeaders));
+    WebbHeaders *header = malloc(sizeof(WebbHeaders));
     header->key = strndup(line, header_mid - line);
     header->val = strdup(header_mid + 2);
     header->next = req->headers;
@@ -209,9 +209,9 @@ int http_parse_req(HttpConnection *conn, HttpRequest *req) {
   return 0;
 }
 
-static void free_headers(HttpHeaders *header, int allocated_keys) {
+static void free_headers(WebbHeaders *header, int allocated_keys) {
   while (header) {
-    HttpHeaders *next = header->next;
+    WebbHeaders *next = header->next;
     if (allocated_keys)
       free(header->key);
     free(header->val);
@@ -220,27 +220,27 @@ static void free_headers(HttpHeaders *header, int allocated_keys) {
   }
 }
 
-void http_req_free(HttpRequest *req) {
+void http_req_free(WebbRequest *req) {
   free_headers(req->headers, 1);
   free(req->uri);
   free(req->query);
 }
 
-void http_res_free(HttpResponse *res) {
+void http_res_free(WebbResponse *res) {
   free_headers(res->headers, 0);
   free(res->body);
 }
 
-const char *http_get_header(const HttpHeaders *h, const char *key) {
-  for (; h; h = h->next) {
+const char *webb_get_header(const WebbRequest *req, const char *key) {
+  for (WebbHeaders *h = req->headers; h; h = h->next) {
     if (strcasecmp(key, h->key) == 0)
       return h->val;
   }
   return NULL;
 }
 
-void http_res_add_header(HttpResponse *res, char *key, char *val) {
-  HttpHeaders *header = malloc(sizeof(HttpHeaders));
+void webb_set_header(WebbResponse *res, char *key, char *val) {
+  WebbHeaders *header = malloc(sizeof(WebbHeaders));
   header->key = key;
   header->val = val;
   header->next = res->headers;

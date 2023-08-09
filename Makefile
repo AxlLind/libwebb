@@ -1,4 +1,4 @@
-.PHONY: help run run-test-% test fmt fmt-check lint clean
+.PHONY: help build run run-test-% test fmt fmt-check lint clean
 .DEFAULT_GOAL := help
 .EXTRA_PREREQS := $(MAKEFILE_LIST)
 
@@ -17,28 +17,39 @@ help:
 	  { desc = $$0 }                                    \
 	' $(MAKEFILE_LIST) | column -t -s ':'
 
-SOURCES   := $(filter-out src/main.c,$(wildcard src/*.c))
-TESTS     := $(wildcard tests/test_*.c)
-ALL_FILES := $(wildcard src/*.c src/*.h tests/*.c tests/*.h)
+SOURCES   := $(wildcard src/*.c)
+BINARIES  := $(wildcard bin/*.c)
+TESTS     := $(wildcard tests/*.c)
+ALL_FILES := $(wildcard src/* tests/* bin/*)
+
+LIB := out/libwebb.a
 
 CC     := gcc
 CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow
 
-$(SOURCES:src/%.c=out/%.o): out/%.o: src/%.c src/%.h
+$(SOURCES:src/%.c=out/obj/%.o): out/obj/%.o: src/%.c src/internal.h include/webb/webb.h
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -Iinclude -c $< -o $@
 
-$(TESTS:tests/test_%.c=out/test_%): out/test_%: tests/test_%.c $(SOURCES:src/%.c=out/%.o)
-	$(CC) $(CFLAGS) $^ -Isrc -o $@
+$(TESTS:tests/%.c=out/test/%): out/test/%: tests/%.c $(LIB)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $^ -Isrc -Iinclude -o $@
 
-out/webc: src/main.c $(SOURCES:src/%.c=out/%.o)
-	$(CC) $(CFLAGS) $^ -o $@
+$(BINARIES:bin/%.c=out/bin/%): out/bin/%: bin/%.c $(LIB)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $^ -Iinclude -o $@
 
-$(TESTS:tests/test_%.c=run-test-%): run-test-%: out/test_%
+$(LIB): $(SOURCES:src/%.c=out/obj/%.o)
+	ar -rc $@ $^
+
+$(TESTS:tests/test_%.c=run-test-%): run-test-%: out/test/test_%
 	./$<
 
+#@ Compile everything
+build: $(LIB) $(BINARIES:bin/%.c=out/bin/%) $(TESTS:tests/test_%.c=out/test/test_%)
+
 #@ Run the web server
-run: out/webc
+run: out/bin/webb
 	./$< .
 
 #@ Run all tests
@@ -54,7 +65,7 @@ fmt-check:
 
 #@ Lint all source files, using clang-tidy
 lint:
-	clang-tidy $(ALL_FILES) -- -Isrc -std=gnu99
+	clang-tidy $(ALL_FILES) -- -Isrc -Iinclude -std=gnu99
 
 #@ Remove all make artifacts
 clean:

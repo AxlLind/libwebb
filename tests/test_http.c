@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "http.h"
+#include "internal.h"
 #include "libtest.h"
-#include "server.h"
+#include "webb/webb.h"
 
 #define TMP_NAME "/tmp/webc-XXXXXX"
 
@@ -51,7 +51,7 @@ int str_conn_close(StrConnection *conn) {
 }
 
 static StrConnection conn;
-static HttpRequest req;
+static WebbRequest req;
 
 TEST(test_http_conn_next) {
   ASSERT_EQ(str_conn_open(&conn, "hello world\r\nhello\r\n\r\n"), 0);
@@ -74,12 +74,12 @@ TEST(test_parse_curl_example) {
   ASSERT_EQ(str_conn_open(&conn, request), 0);
   ASSERT_EQ(http_parse_req(&conn.c, &req), 0);
 
-  EXPECT_EQ(req.method, HTTP_GET);
+  EXPECT_EQ(req.method, WEBB_GET);
   EXPECT_EQ_STR(req.uri, "/test/a.txt");
   EXPECT_EQ_STR(req.query, "abc=2");
-  EXPECT_EQ_STR(http_get_header(req.headers, "host"), "localhost:8080");
-  EXPECT_EQ_STR(http_get_header(req.headers, "user-agent"), "curl/7.77.0");
-  EXPECT_EQ_STR(http_get_header(req.headers, "accept"), "*/*");
+  EXPECT_EQ_STR(webb_get_header(&req, "host"), "localhost:8080");
+  EXPECT_EQ_STR(webb_get_header(&req, "user-agent"), "curl/7.77.0");
+  EXPECT_EQ_STR(webb_get_header(&req, "accept"), "*/*");
   http_req_free(&req);
 
   ASSERT_EQ(str_conn_close(&conn), 0);
@@ -90,7 +90,7 @@ TEST(test_parse_minimal_request) {
   ASSERT_EQ(str_conn_open(&conn, request), 0);
   ASSERT_EQ(http_parse_req(&conn.c, &req), 0);
 
-  EXPECT_EQ(req.method, HTTP_GET);
+  EXPECT_EQ(req.method, WEBB_GET);
   EXPECT_EQ_STR(req.uri, "/");
   EXPECT_EQ(req.query, NULL);
   EXPECT_EQ(req.headers, NULL);
@@ -136,7 +136,7 @@ TEST(test_multiple_requests_per_connection) {
 
   for (int i = 0; i < 3; i++) {
     EXPECT_EQ(http_parse_req(&conn.c, &req), 0);
-    EXPECT_EQ(req.method, HTTP_GET);
+    EXPECT_EQ(req.method, WEBB_GET);
     EXPECT_EQ_STR(req.uri, "/");
     EXPECT_EQ(req.query, NULL);
     EXPECT_EQ(req.headers, NULL);

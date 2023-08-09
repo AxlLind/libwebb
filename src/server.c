@@ -7,8 +7,8 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include "http.h"
-#include "server.h"
+#include "internal.h"
+#include "webb/webb.h"
 
 #define BACKLOG 10
 
@@ -55,9 +55,9 @@ static int open_server_socket(const char *port) {
   return sockfd;
 }
 
-int http_server_init(HttpServer *server, const char *port) {
+int webb_server_init(WebbServer *server, const char *port) {
   server->sockfd = open_server_socket(port);
-  return server->sockfd == -1 ? 0 : 1;
+  return server->sockfd == -1 ? 1 : 0;
 }
 
 static int send_all(int fd, const char *buf, size_t len) {
@@ -71,13 +71,13 @@ static int send_all(int fd, const char *buf, size_t len) {
   return 0;
 }
 
-static int send_response(int connfd, const HttpResponse *res) {
+static int send_response(int connfd, const WebbResponse *res) {
   char buf[65536], *bufptr = buf;
-  const char *status_str = http_status_str(res->status);
+  const char *status_str = webb_status_str(res->status);
   if (!status_str)
     return 1;
   bufptr += sprintf(bufptr, "HTTP/1.1 %d %s\r\n", res->status, status_str);
-  for (HttpHeaders *h = res->headers; h; h = h->next)
+  for (WebbHeaders *h = res->headers; h; h = h->next)
     bufptr += sprintf(bufptr, "%s: %s\r\n", h->key, h->val);
 
   time_t now = time(0);
@@ -95,7 +95,7 @@ static int send_response(int connfd, const HttpResponse *res) {
   return 0;
 }
 
-int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
+int webb_server_run(WebbServer *server, WebbHandler *handler_fn) {
   struct sockaddr_storage addr;
   socklen_t addrsize = sizeof(addr);
   while (1) {
@@ -106,8 +106,8 @@ int http_server_run(HttpServer *server, HttpHandler *handler_fn) {
     }
 
     HttpConnection conn = {.fd = connfd};
-    HttpRequest req;
-    HttpResponse res = {0};
+    WebbRequest req;
+    WebbResponse res = {0};
 
     if (http_parse_req(&conn, &req)) {
       (void) fprintf(stderr, "failed to parse http request!\n");
