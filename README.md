@@ -9,9 +9,10 @@ The basic usage of the library is as follows:
 
 int http_handler(const WebbRequest *req, WebbResponse *res) {
   // implement behavior given the HTTP request...
-  res->body = strdup("hello world");
-  res->body_len = strlen("hello world");
   res->status = 200;
+  res->body = strdup("hello world");
+  res->body_len = strlen(res->body);
+  webb_set_header(res, "content-type", strdup("text/raw"));
   return 0;
 }
 
