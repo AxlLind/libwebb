@@ -5,6 +5,8 @@
 #include "internal.h"
 #include "webb/webb.h"
 
+#define MAX_HEADERS 64
+
 const char *webb_method_str(WebbMethod m) {
   switch (m) {
   case WEBB_CONNECT: return "CONNECT";
@@ -187,7 +189,7 @@ int http_parse_req(HttpConnection *conn, WebbRequest *req) {
     return 1;
 
   // parse each header
-  while (1) {
+  for (size_t i = 0;; i++) {
     line = http_conn_next(conn);
     if (!line)
       return 1;
@@ -205,6 +207,10 @@ int http_parse_req(HttpConnection *conn, WebbRequest *req) {
     header->val = strdup(header_mid + 2);
     header->next = req->headers;
     req->headers = header;
+
+    // limit the number of headers to prevent DOS
+    if (i == MAX_HEADERS)
+      return 1;
   }
 
   const char *content_length = webb_get_header(req, "content-length");
