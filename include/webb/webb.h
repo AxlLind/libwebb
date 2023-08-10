@@ -3,6 +3,10 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @brief An HTTP method. */
 typedef enum {
   WEBB_CONNECT,
@@ -123,5 +127,9 @@ const char *webb_method_str(WebbMethod m);
  * @returns The status message, or NULL if status is not a valid HTTP status code. Should not be freed.
  */
 const char *webb_status_str(int status);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
