@@ -5,8 +5,6 @@
 #include "internal.h"
 #include "webb/webb.h"
 
-#define MAX_HEADERS 64
-
 const char *webb_method_str(WebbMethod m) {
   switch (m) {
   case WEBB_CONNECT: return "CONNECT";

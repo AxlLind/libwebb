@@ -172,6 +172,27 @@ TEST(test_multiple_requests_per_connection) {
   ASSERT_EQ(str_conn_close(&conn), 0);
 }
 
+TEST(test_max_header_limit) {
+  char request[65536], *ptr = request;
+  ptr += sprintf(ptr, "GET / HTTP/1.1\r\n");
+  for (int i = 0; i < MAX_HEADERS; i++)
+    ptr += sprintf(ptr, "Header-%d: Value\r\n", i);
+  (void) sprintf(ptr, "\r\n");
+
+  // should parse ok with one less than the maximum
+  ASSERT_EQ(str_conn_open(&conn, request), 0);
+  EXPECT_EQ(http_parse_req(&conn.c, &req), 0);
+  http_req_free(&req);
+
+  // should fail to parse with exactly the maximum
+  (void) sprintf(ptr, "Header-%d: Value\r\n\r\n", MAX_HEADERS);
+  ASSERT_EQ(str_conn_reopen(&conn, request), 0);
+  EXPECT_NE(http_parse_req(&conn.c, &req), 0);
+  http_req_free(&req);
+
+  ASSERT_EQ(str_conn_close(&conn), 0);
+}
+
 TEST_MAIN(
   test_http_conn_next,
   test_parse_curl_example,
@@ -179,4 +200,5 @@ TEST_MAIN(
   test_parse_request_body,
   test_missing_final_newline,
   test_invalid_http_version,
-  test_multiple_requests_per_connection)
+  test_multiple_requests_per_connection,
+  test_max_header_limit)

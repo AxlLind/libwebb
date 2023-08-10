@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include "webb/webb.h"
 
+#define MAX_HEADERS 64
+
 typedef struct {
   int fd;
   size_t read;
