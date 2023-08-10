@@ -161,3 +161,20 @@ const char *http_conn_next(HttpConnection *c) {
     c->read += nread;
   }
 }
+
+int http_conn_read_buf(HttpConnection *c, char *buf, size_t len) {
+  size_t i = c->read - c->i;
+  memcpy(buf, c->buf + c->i, i > len ? len : i);
+  c->i = c->read;
+
+  for (ssize_t nread = -1; i < len; i += nread) {
+    nread = read(c->fd, buf + i, len - i);
+    if (nread == -1) {
+      perror("read");
+      return 1;
+    }
+    if (nread == 0)
+      return 1;
+  }
+  return 0;
+}

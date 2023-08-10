@@ -19,4 +19,6 @@ void http_res_free(WebbResponse *res);
 
 const char *http_conn_next(HttpConnection *conn);
 
+int http_conn_read_buf(HttpConnection *conn, char *buf, size_t len);
+
 #endif

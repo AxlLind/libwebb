@@ -80,6 +80,8 @@ TEST(test_parse_curl_example) {
   EXPECT_EQ_STR(webb_get_header(&req, "host"), "localhost:8080");
   EXPECT_EQ_STR(webb_get_header(&req, "user-agent"), "curl/7.77.0");
   EXPECT_EQ_STR(webb_get_header(&req, "accept"), "*/*");
+  EXPECT_EQ(req.body, NULL);
+  EXPECT_EQ(req.body_len, 0);
   http_req_free(&req);
 
   ASSERT_EQ(str_conn_close(&conn), 0);
@@ -94,9 +96,29 @@ TEST(test_parse_minimal_request) {
   EXPECT_EQ_STR(req.uri, "/");
   EXPECT_EQ(req.query, NULL);
   EXPECT_EQ(req.headers, NULL);
+  EXPECT_EQ(req.body, NULL);
+  EXPECT_EQ(req.body_len, 0);
   http_req_free(&req);
 
   ASSERT_EQ(str_conn_close(&conn), 0);
+}
+
+TEST(test_parse_request_body) {
+  const char *request =
+    "POST / HTTP/1.1\r\n"
+    "Content-Length: 11\r\n"
+    "\r\n"
+    "hello world";
+  ASSERT_EQ(str_conn_open(&conn, request), 0);
+  ASSERT_EQ(http_parse_req(&conn.c, &req), 0);
+
+  EXPECT_EQ(req.method, WEBB_POST);
+  EXPECT_EQ_STR(req.uri, "/");
+  EXPECT_EQ(req.query, NULL);
+  EXPECT_EQ_STR(webb_get_header(&req, "content-length"), "11");
+  EXPECT_EQ_STR(req.body, "hello world");
+  EXPECT_EQ(req.body_len, 11);
+  http_req_free(&req);
 }
 
 TEST(test_missing_final_newline) {
@@ -140,6 +162,8 @@ TEST(test_multiple_requests_per_connection) {
     EXPECT_EQ_STR(req.uri, "/");
     EXPECT_EQ(req.query, NULL);
     EXPECT_EQ(req.headers, NULL);
+    EXPECT_EQ(req.body, NULL);
+    EXPECT_EQ(req.body_len, 0);
     http_req_free(&req);
   }
   EXPECT_NE(http_parse_req(&conn.c, &req), 0);
@@ -152,6 +176,7 @@ TEST_MAIN(
   test_http_conn_next,
   test_parse_curl_example,
   test_parse_minimal_request,
+  test_parse_request_body,
   test_missing_final_newline,
   test_invalid_http_version,
   test_multiple_requests_per_connection)

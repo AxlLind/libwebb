@@ -41,6 +41,10 @@ typedef struct {
   char *query;
   /** @brief The HTTP request headers. */
   WebbHeaders *headers;
+  /** @brief The HTTP request body (may be NULL). */
+  char *body;
+  /** @brief The length of the request body. */
+  size_t body_len;
 } WebbRequest;
 
 /** @brief A Webb HTTP response. */

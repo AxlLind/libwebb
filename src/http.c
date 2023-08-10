@@ -206,6 +206,20 @@ int http_parse_req(HttpConnection *conn, WebbRequest *req) {
     header->next = req->headers;
     req->headers = header;
   }
+
+  const char *content_length = webb_get_header(req, "content-length");
+  if (content_length) {
+    ssize_t length = strtol(content_length, NULL, 10);
+    if (length > 0) {
+      req->body_len = (size_t) length;
+      req->body = malloc(req->body_len + 1);
+      if (!req->body)
+        return 1;
+      req->body[req->body_len] = '\0';
+      if (http_conn_read_buf(conn, req->body, req->body_len))
+        return 1;
+    }
+  }
   return 0;
 }
 
@@ -224,6 +238,7 @@ void http_req_free(WebbRequest *req) {
   free_headers(req->headers, 1);
   free(req->uri);
   free(req->query);
+  free(req->body);
 }
 
 void http_res_free(WebbResponse *res) {
