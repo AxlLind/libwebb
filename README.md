@@ -9,6 +9,10 @@ The basic usage of the library is as follows:
 
 int http_handler(const WebbRequest *req, WebbResponse *res) {
   // implement behavior given the HTTP request...
+  if (req->method != WEBB_GET) {
+    res->status = 404;
+    return 0;
+  }
   res->status = 200;
   res->body = strdup("hello world");
   res->body_len = strlen(res->body);
@@ -24,7 +28,7 @@ int main(void) {
 }
 ```
 
-For API documentation, see the [library header file](./include/webb/webb.h).
+For API documentation, see the [library header file](./include/webb/webb.h). The API is fully documented using doxygen comments.
 
 See [./bin/webb.c](./bin/webb.c) for a small web server using the framework.
 
@@ -32,6 +36,7 @@ See [./bin/webb.c](./bin/webb.c) for a small web server using the framework.
 ```bash
 make build            # build the library
 cp out/libwebb.a $DIR # copy the lib to your destination
-```
 
-Add the flag `-I$LIBWEBB_DIR/include` to be able to include the library header.
+# compile against the library and include the header path
+gcc ... $DIR/libwebb.a -I$LIBWEBB_DIR/include
+```
