@@ -25,10 +25,8 @@ typedef enum {
 typedef struct WebbHeaders {
   /** @brief The key/name of the header. */
   char *key;
-
   /** @brief The value of the header. */
   char *val;
-
   /** @brief The next header in the linked list. */
   struct WebbHeaders *next;
 } WebbHeaders;
@@ -37,13 +35,10 @@ typedef struct WebbHeaders {
 typedef struct {
   /** @brief The HTTP verb of the request. */
   WebbMethod method;
-
   /** @brief The uri component of the request. */
   char *uri;
-
   /** @brief The query string of the request (may be NULL). */
   char *query;
-
   /** @brief The HTTP request headers. */
   WebbHeaders *headers;
 } WebbRequest;
@@ -52,13 +47,10 @@ typedef struct {
 typedef struct {
   /** @brief HTTP status response code (e.g 200 for OK). */
   int status;
-
   /** @brief HTTP headers of the response. */
   WebbHeaders *headers;
-
   /** @brief The HTTP body (may be NULL). */
   char *body;
-
   /** @brief The length of the HTTP response body. */
   size_t body_len;
 } WebbResponse;
