@@ -7,7 +7,7 @@
 #include "libtest.h"
 #include "webb/webb.h"
 
-#define TMP_NAME "/tmp/webc-XXXXXX"
+#define TMP_NAME "/tmp/libwebb-XXXXXX"
 
 #define CHECK(ok, msg) \
   do {                 \

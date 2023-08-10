@@ -83,7 +83,7 @@ static int send_response(int connfd, const WebbResponse *res) {
   time_t now = time(0);
   struct tm *tm = gmtime(&now);
   bufptr += strftime(bufptr, buf + sizeof(buf) - bufptr, "date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm);
-  bufptr += sprintf(bufptr, "server: webc 0.1\r\n");
+  bufptr += sprintf(bufptr, "server: libwebb 0.1\r\n");
   bufptr += sprintf(bufptr, "connection: close\r\n");
   if (res->body_len)
     bufptr += sprintf(bufptr, "content-length: %zu\r\n", res->body_len);

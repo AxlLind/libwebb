@@ -4,7 +4,7 @@
 
 help:
 	@echo 'usage: make [TARGET..]'
-	@echo 'Makefile used to build and lint WebC'
+	@echo 'Makefile used to build and lint libwebb'
 	@echo
 	@echo 'TARGET:'
 	@awk '                                              \

@@ -131,7 +131,7 @@ int print_usage(const char *program, int error) {
   FILE *out = error ? stderr : stdout;
   (void) fprintf(out, "usage: %s [-h] [-p PORT] [DIR]\n", program);
   if (!error) {
-    (void) fprintf(out, "web.c - A small http server written in C\n");
+    (void) fprintf(out, "webb - A small http server written in C using libwebb\n");
     (void) fprintf(out, "\n");
     (void) fprintf(out, "args:\n");
     (void) fprintf(out, "  DIR      Directory to run web server from, defaults to cwd\n");
