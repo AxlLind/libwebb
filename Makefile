@@ -20,7 +20,7 @@ help:
 SOURCES   := $(wildcard src/*.c)
 BINARIES  := $(wildcard bin/*.c)
 TESTS     := $(wildcard tests/*.c)
-ALL_FILES := $(wildcard src/* tests/* bin/*)
+ALL_FILES := $(wildcard src/* tests/* bin/* include/webb/*)
 
 LIB := out/libwebb.a
 
