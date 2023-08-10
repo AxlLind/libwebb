@@ -41,7 +41,7 @@ int handle_dir(WebbResponse *res, const char *path, const char *uri) {
   DIR *dp = opendir(path);
   if (!dp) {
     perror("could not open dir");
-    return 1;
+    return -1;
   }
 
   char *html = malloc(65536), *s = html;
@@ -66,65 +66,55 @@ int handle_dir(WebbResponse *res, const char *path, const char *uri) {
   s += sprintf(s, "</ul>\n</body>\n</html>\n");
   res->body_len = s - html;
   res->body = html;
-  res->status = 200;
-  return 0;
+  return 200;
 }
 
 int http_handler(const WebbRequest *req, WebbResponse *res) {
   (void) printf("Request: %s %s %s\n", webb_method_str(req->method), req->uri, req->query ? req->query : "");
 
-  if (req->method != WEBB_GET) {
-    res->status = 404;
-    return 0;
-  }
+  if (req->method != WEBB_GET)
+    return 404;
 
   char file[PATH_MAX];
-  if (snprintf(file, PATH_MAX, "%s%s", dir, req->uri) < 0) {
-    res->status = 404;
-    return 0;
-  }
+  if (snprintf(file, PATH_MAX, "%s%s", dir, req->uri) < 0)
+    return 404;
 
   struct stat sb;
-  if (stat(file, &sb) == -1) {
-    res->status = 404;
-    return 0;
-  }
+  if (stat(file, &sb) == -1)
+    return 404;
 
   if (S_ISDIR(sb.st_mode))
     return handle_dir(res, file, req->uri);
 
-  if (!S_ISREG(sb.st_mode)) {
-    res->status = 404;
-    return 0;
-  }
+  if (!S_ISREG(sb.st_mode))
+    return 404;
 
   FILE *f = fopen(file, "rb");
   if (!f) {
     perror(req->uri);
-    return 1;
+    return -1;
   }
   if (fseek(f, 0, SEEK_END) != 0) {
     perror("fseek");
-    return 1;
+    return -1;
   }
   res->body_len = ftell(f);
   rewind(f);
 
   res->body = malloc(res->body_len + 1);
   if (!res->body)
-    return 1;
+    return -1;
   if (fread(res->body, res->body_len, 1, f) != 1) {
     perror("fread");
-    return 1;
+    return -1;
   }
   if (fclose(f) != 0) {
     perror("fclose");
-    return 1;
+    return -1;
   }
 
   webb_set_header(res, "content-type", strdup(mime_type(file)));
-  res->status = 200;
-  return 0;
+  return 200;
 }
 
 int print_usage(const char *program, int error) {

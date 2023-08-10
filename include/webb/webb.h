@@ -59,7 +59,10 @@ typedef struct {
   size_t body_len;
 } WebbResponse;
 
-/** @brief A Webb HTTP handler function. Returns zero on success. */
+/**
+ * @brief A Webb HTTP handler function.
+ *        Returns the HTTP status code, or -1 if an unexpected error occurred.
+ */
 typedef int(WebbHandler)(const WebbRequest *, WebbResponse *);
 
 /** @brief A Webb HTTP server. */

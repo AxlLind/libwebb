@@ -112,9 +112,12 @@ int webb_server_run(WebbServer *server, WebbHandler *handler_fn) {
     if (http_parse_req(&conn, &req)) {
       (void) fprintf(stderr, "failed to parse http request!\n");
       res.status = 400;
-    } else if (handler_fn(&req, &res)) {
-      (void) fprintf(stderr, "Request handler failed!");
-      break;
+    } else {
+      res.status = handler_fn(&req, &res);
+      if (res.status < 0) {
+        (void) fprintf(stderr, "Request handler failed!\n");
+        res.status = 500;
+      }
     }
     if (send_response(connfd, &res)) {
       (void) fprintf(stderr, "Sending response failed!\n");

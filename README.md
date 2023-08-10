@@ -9,15 +9,13 @@ The basic usage of the library is as follows:
 
 int http_handler(const WebbRequest *req, WebbResponse *res) {
   // implement behavior given the HTTP request...
-  if (req->method != WEBB_GET) {
-    res->status = 404;
-    return 0;
-  }
-  res->status = 200;
+  if (req->method != WEBB_GET)
+    return 404;
+
   res->body = strdup("hello world");
   res->body_len = strlen(res->body);
   webb_set_header(res, "content-type", strdup("text/raw"));
-  return 0;
+  return 200;
 }
 
 int main(void) {
