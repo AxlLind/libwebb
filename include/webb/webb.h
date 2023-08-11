@@ -65,30 +65,15 @@ typedef struct {
  */
 typedef int(WebbHandler)(const WebbRequest *, WebbResponse *);
 
-/** @brief A Webb HTTP server. */
-typedef struct {
-  int sockfd;
-} WebbServer;
-
-/**
- * @brief Initalizes the server to listen to the given port.
- *
- * @param server The server to initialize.
- * @param port The port to listen to (e.g "8080").
- *
- * @returns 0 if ok, otherwise an error.
- */
-int webb_server_init(WebbServer *server, const char *port);
-
 /**
  * @brief Starts the Webb http server.
  *
- * @param server The Webb http server. Has to be successfully initialized using `webb_server_init`.
+ * @param port The port to listen to (e.g "8080").
  * @param handler The http request/response handler function.
  *
  * @returns A non-zero error. Note that this function never returns unless an error occurred.
  */
-int webb_server_run(WebbServer *server, WebbHandler *handler);
+int webb_server_run(const char *port, WebbHandler *handler);
 
 /**
  * @brief Get the value of a given header from the request.

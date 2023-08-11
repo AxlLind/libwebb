@@ -55,11 +55,6 @@ static int open_server_socket(const char *port) {
   return sockfd;
 }
 
-int webb_server_init(WebbServer *server, const char *port) {
-  server->sockfd = open_server_socket(port);
-  return server->sockfd == -1 ? 1 : 0;
-}
-
 static int send_all(int fd, const char *buf, size_t len) {
   for (ssize_t sent = -1; len; buf += sent, len -= sent) {
     sent = send(fd, buf, len, 0);
@@ -95,11 +90,14 @@ static int send_response(int connfd, const WebbResponse *res) {
   return 0;
 }
 
-int webb_server_run(WebbServer *server, WebbHandler *handler_fn) {
+int webb_server_run(const char *port, WebbHandler *handler_fn) {
+  int sockfd = open_server_socket(port);
+  if (sockfd == -1)
+    return 1;
   struct sockaddr_storage addr;
   socklen_t addrsize = sizeof(addr);
   while (1) {
-    int connfd = accept(server->sockfd, (struct sockaddr *) &addr, &addrsize);
+    int connfd = accept(sockfd, (struct sockaddr *) &addr, &addrsize);
     if (connfd == -1) {
       perror("accept");
       break;
@@ -132,8 +130,7 @@ int webb_server_run(WebbServer *server, WebbHandler *handler_fn) {
     }
   }
 
-  close(server->sockfd);
-  memset(server, 0, sizeof(*server));
+  close(sockfd);
   return 1;
 }
 

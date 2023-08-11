@@ -19,10 +19,7 @@ int http_handler(const WebbRequest *req, WebbResponse *res) {
 }
 
 int main(void) {
-  WebbServer server;
-  if (webb_server_init(&server, "8080") != 0)
-    return 1;
-  return webb_server_run(&server, http_handler);
+  return webb_server_run("8080", http_handler);
 }
 ```
 

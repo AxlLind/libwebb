@@ -159,10 +159,6 @@ int main(int argc, char *argv[]) {
   if (dir[dirlen - 1] == '/')
     dir[dirlen - 1] = '\0';
 
-  WebbServer server;
-  if (webb_server_init(&server, port) != 0)
-    return 1;
-
   (void) printf("Server listening on port %s...\n", port);
-  return webb_server_run(&server, http_handler);
+  return webb_server_run(port, http_handler);
 }
