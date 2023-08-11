@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 /** @brief An HTTP method. */
-typedef enum {
+typedef enum WebbMethod {
   WEBB_CONNECT,
   WEBB_DELETE,
   WEBB_GET,
@@ -32,7 +32,7 @@ typedef struct WebbHeaders {
 } WebbHeaders;
 
 /** @brief A Webb HTTP request. */
-typedef struct {
+typedef struct WebbRequest {
   /** @brief The HTTP verb of the request. */
   WebbMethod method;
   /** @brief The uri component of the request. */
@@ -48,7 +48,7 @@ typedef struct {
 } WebbRequest;
 
 /** @brief A Webb HTTP response. */
-typedef struct {
+typedef struct WebbResponse {
   /** @brief HTTP status response code (e.g 200 for OK). */
   int status;
   /** @brief HTTP headers of the response. */
@@ -60,15 +60,19 @@ typedef struct {
 } WebbResponse;
 
 /**
- * @brief A Webb HTTP handler function.
- *        Returns the HTTP status code, or -1 if an unexpected error occurred.
+ * @brief A Webb HTTP handler function. Accepts an incoming request and returns a response.
+ *
+ * @param req The HTTP request object.
+ * @param res The HTTP response object, mutated by the function.
+ *
+ * @returns The HTTP status code (e.g 200 for OK), -1 on unexpected errors.
  */
-typedef int(WebbHandler)(const WebbRequest *, WebbResponse *);
+typedef int(WebbHandler)(const WebbRequest *req, WebbResponse *res);
 
 /**
  * @brief Starts the Webb http server.
  *
- * @param port The port to listen to (e.g "8080").
+ * @param port    The port to listen to (e.g "8080").
  * @param handler The http request/response handler function.
  *
  * @returns A non-zero error. Note that this function never returns unless an error occurred.
