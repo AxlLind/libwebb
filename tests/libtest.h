@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 #define FILENAME (strrchr("/" __FILE__, '/') + 1)
 
