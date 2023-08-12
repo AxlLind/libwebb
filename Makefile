@@ -27,15 +27,15 @@ LIB := out/libwebb.a
 CC     := gcc
 CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow
 
-$(SOURCES:src/%.c=out/obj/%.o): out/obj/%.o: src/%.c src/internal.h include/webb/webb.h
+out/obj/%.o: src/%.c src/internal.h include/webb/webb.h
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -Iinclude -c $< -o $@
 
-$(TESTS:tests/%.c=out/test/%): out/test/%: tests/%.c $(LIB)
+out/test/%: tests/%.c $(LIB)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $^ -Isrc -Iinclude -o $@
 
-$(BINARIES:bin/%.c=out/bin/%): out/bin/%: bin/%.c $(LIB)
+out/bin/%: bin/%.c $(LIB)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $^ -Iinclude -o $@
 
