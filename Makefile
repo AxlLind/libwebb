@@ -1,21 +1,6 @@
 .PHONY: help build run test fmt fmt-check lint clean
-.DEFAULT_GOAL := help
+.DEFAULT_GOAL  := help
 .EXTRA_PREREQS := $(MAKEFILE_LIST)
-
-help:
-	@echo 'usage: make [TARGET..]'
-	@echo 'Makefile used to build and lint libwebb'
-	@echo
-	@echo 'TARGET:'
-	@awk '                                              \
-	  /(^| )[a-z%-]+:/ {                                \
-	    if (desc !~ /^#@ /) next;                       \
-	    for (i=1; i <= NF; i++)                         \
-	      if ($$i ~ /:$$/) target = $$i;                \
-	    printf "  %s%s\n", target, substr(desc, 4, 100) \
-	  }                                                 \
-	  { desc = $$0 }                                    \
-	' $(MAKEFILE_LIST) | column -t -s ':'
 
 LIB   := out/libwebb.a
 OBJS  := $(patsubst src/%.c,out/obj/%.o,$(wildcard src/*.c))
@@ -67,3 +52,19 @@ lint:
 #@ Remove all make artifacts
 clean:
 	rm -rf out
+
+#@ Print help text
+help:
+	@echo 'usage: make [TARGET..]'
+	@echo 'Makefile used to build and lint libwebb'
+	@echo
+	@echo 'TARGET:'
+	@awk '                                              \
+	  /(^| )[a-z%-]+:/ {                                \
+	    if (desc !~ /^#@ /) next;                       \
+	    for (i=1; i <= NF; i++)                         \
+	      if ($$i ~ /:$$/) target = $$i;                \
+	    printf "  %s%s\n", target, substr(desc, 4, 100) \
+	  }                                                 \
+	  { desc = $$0 }                                    \
+	' $(MAKEFILE_LIST) | column -t -s ':'
