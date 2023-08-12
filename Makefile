@@ -43,7 +43,7 @@ $(LIB): $(SOURCES:src/%.c=out/obj/%.o)
 	ar -rc $@ $^
 
 $(TESTS:tests/test_%.c=run-test-%): run-test-%: out/test/test_%
-	./$<
+	@./$<
 
 #@ Compile everything
 build: $(LIB) $(BINARIES:bin/%.c=out/bin/%) $(TESTS:tests/test_%.c=out/test/test_%)
@@ -53,7 +53,7 @@ run: out/bin/webb
 	./$< .
 
 #@ Run all tests
-test: $(TESTS:tests/test_%.c=run-test-%)
+test: $(TESTS:tests/test_%.c=out/test/test_%) $(TESTS:tests/test_%.c=run-test-%)
 
 #@ Format all source files, in place
 fmt:
