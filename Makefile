@@ -28,18 +28,18 @@ CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-alig
 
 out/obj/%.o: src/%.c src/internal.h include/webb/webb.h
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -Iinclude -c $< -o $@
+	$(CC) $(CFLAGS) -o $@ $< -Iinclude -c
 
 out/tests/%: tests/%.c $(LIB)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $^ -Isrc -Iinclude -o $@
+	$(CC) $(CFLAGS) -o $@ $^ -Iinclude -Isrc
 
 out/bin/%: bin/%.c $(LIB)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $^ -Iinclude -o $@
+	$(CC) $(CFLAGS) -o $@ $^ -Iinclude
 
 $(LIB): $(OBJS)
-	ar -rc $@ $^
+	$(AR) rc $@ $^
 
 #@ Compile everything
 build: $(LIB) $(TESTS) $(BINS)
@@ -54,11 +54,11 @@ test: $(TESTS)
 
 #@ Format all source files, in place
 fmt:
-	clang-format -style=file -i $(FILES)
+	clang-format -style=file $(FILES) -i
 
 #@ Check if sources files are formatted
 fmt-check:
-	clang-format -style=file --dry-run -Werror $(FILES)
+	clang-format -style=file $(FILES) --dry-run -Werror
 
 #@ Lint all source files, using clang-tidy
 lint:
