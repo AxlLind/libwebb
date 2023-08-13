@@ -67,16 +67,16 @@ TEST(test_sending_minimal_request) {
   const char *request = "GET / HTTP/1.1\r\n\r\n";
   EXPECT_NE(send(fd, request, strlen(request), 0), -1);
 
-  char buf[4096];
-  ssize_t nread = read(fd, buf, sizeof(buf));
+  char res[4096];
+  ssize_t nread = read(fd, res, sizeof(res));
   EXPECT_GT(nread, 17);
-  EXPECT_LT(nread, (ssize_t) sizeof(buf));
-  buf[nread] = '\0';
-  EXPECT_EQ(memcmp(buf, "HTTP/1.1 200 OK\r\n", 17), 0);
-  EXPECT_NE(strstr(buf, "x-libwebb-test: cool value\r\n"), NULL);
-  EXPECT_NE(strstr(buf, "server: libwebb 0.1\r\n"), NULL);
-  EXPECT_NE(strstr(buf, "date: "), NULL);
-  EXPECT_NE(strstr(buf, "connection: "), NULL);
+  EXPECT_LT(nread, (ssize_t) sizeof(res));
+  res[nread] = '\0';
+  EXPECT_EQ(memcmp(res, "HTTP/1.1 200 OK\r\n", 17), 0);
+  EXPECT(strstr(res, "x-libwebb-test: cool value\r\n"));
+  EXPECT(strstr(res, "server: libwebb 0.1\r\n"));
+  EXPECT(strstr(res, "date: "));
+  EXPECT(strstr(res, "connection: "));
 
   EXPECT_NE(close(fd), -1);
   ASSERT_NE(kill(pid, SIGKILL), -1);

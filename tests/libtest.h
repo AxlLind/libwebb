@@ -17,6 +17,9 @@
     }                                                                                         \
   } while (0)
 
+#define EXPECT(expr) INTERNAL_ASSERT(0, expr, "%s", #expr)
+#define ASSERT(expr) INTERNAL_ASSERT(1, expr, "%s", #expr)
+
 #define EXPECT_EQ(a, b) INTERNAL_ASSERT(0, (a) == (b), "%s == %s", #a, #b)
 #define ASSERT_EQ(a, b) INTERNAL_ASSERT(1, (a) == (b), "%s == %s", #a, #b)
 
