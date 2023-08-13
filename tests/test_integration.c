@@ -61,25 +61,25 @@ int test_handler(const WebbRequest *req, WebbResponse *res) {
 TEST(test_sending_minimal_request) {
   pid_t pid;
   int fd = open_webb_socket(test_handler, &pid);
-  ASSERT_NE(fd, -1);
-  ASSERT_NE(pid, -1);
+  ASSERT(fd != -1);
+  ASSERT(pid != -1);
 
   const char *request = "GET / HTTP/1.1\r\n\r\n";
-  EXPECT_NE(send(fd, request, strlen(request), 0), -1);
+  EXPECT(send(fd, request, strlen(request), 0) != -1);
 
   char res[4096];
   ssize_t nread = read(fd, res, sizeof(res));
-  EXPECT_GT(nread, 17);
-  EXPECT_LT(nread, (ssize_t) sizeof(res));
+  EXPECT(nread > 17);
+  EXPECT(nread < (ssize_t) sizeof(res));
   res[nread] = '\0';
-  EXPECT_EQ(memcmp(res, "HTTP/1.1 200 OK\r\n", 17), 0);
+  EXPECT(memcmp(res, "HTTP/1.1 200 OK\r\n", 17) == 0);
   EXPECT(strstr(res, "x-libwebb-test: cool value\r\n"));
   EXPECT(strstr(res, "server: libwebb 0.1\r\n"));
   EXPECT(strstr(res, "date: "));
   EXPECT(strstr(res, "connection: "));
 
-  EXPECT_NE(close(fd), -1);
-  ASSERT_NE(kill(pid, SIGKILL), -1);
+  EXPECT(close(fd) != -1);
+  ASSERT(kill(pid, SIGKILL) != -1);
 }
 
 TEST_MAIN(test_sending_minimal_request)

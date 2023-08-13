@@ -14,36 +14,36 @@ TEST(test_parse_curl_example) {
     "User-Agent: curl/7.77.0\r\n"
     "Accept: */*\r\n"
     "\r\n";
-  ASSERT_EQ(str_conn_open(&conn, request), 0);
-  ASSERT_EQ(http_parse_req(&conn.c, &req), 0);
+  ASSERT(str_conn_open(&conn, request) == 0);
+  ASSERT(http_parse_req(&conn.c, &req) == 0);
 
-  EXPECT_EQ(req.method, WEBB_GET);
+  EXPECT(req.method == WEBB_GET);
   EXPECT_EQ_STR(req.uri, "/test/a.txt");
   EXPECT_EQ_STR(req.query, "abc=2");
   EXPECT_EQ_STR(webb_get_header(&req, "host"), "localhost:8080");
   EXPECT_EQ_STR(webb_get_header(&req, "user-agent"), "curl/7.77.0");
   EXPECT_EQ_STR(webb_get_header(&req, "accept"), "*/*");
-  EXPECT_EQ(req.body, NULL);
-  EXPECT_EQ(req.body_len, 0);
+  EXPECT(req.body == NULL);
+  EXPECT(req.body_len == 0);
   http_req_free(&req);
 
-  ASSERT_EQ(str_conn_close(&conn), 0);
+  ASSERT(str_conn_close(&conn) == 0);
 }
 
 TEST(test_parse_minimal_request) {
   const char *request = "GET / HTTP/1.1\r\n\r\n";
-  ASSERT_EQ(str_conn_open(&conn, request), 0);
-  ASSERT_EQ(http_parse_req(&conn.c, &req), 0);
+  ASSERT(str_conn_open(&conn, request) == 0);
+  ASSERT(http_parse_req(&conn.c, &req) == 0);
 
-  EXPECT_EQ(req.method, WEBB_GET);
+  EXPECT(req.method == WEBB_GET);
   EXPECT_EQ_STR(req.uri, "/");
-  EXPECT_EQ(req.query, NULL);
-  EXPECT_EQ(req.headers, NULL);
-  EXPECT_EQ(req.body, NULL);
-  EXPECT_EQ(req.body_len, 0);
+  EXPECT(req.query == NULL);
+  EXPECT(req.headers == NULL);
+  EXPECT(req.body == NULL);
+  EXPECT(req.body_len == 0);
   http_req_free(&req);
 
-  ASSERT_EQ(str_conn_close(&conn), 0);
+  ASSERT(str_conn_close(&conn) == 0);
 }
 
 TEST(test_parse_request_body) {
@@ -52,34 +52,34 @@ TEST(test_parse_request_body) {
     "Content-Length: 11\r\n"
     "\r\n"
     "hello world";
-  ASSERT_EQ(str_conn_open(&conn, request), 0);
-  ASSERT_EQ(http_parse_req(&conn.c, &req), 0);
+  ASSERT(str_conn_open(&conn, request) == 0);
+  ASSERT(http_parse_req(&conn.c, &req) == 0);
 
-  EXPECT_EQ(req.method, WEBB_POST);
+  EXPECT(req.method == WEBB_POST);
   EXPECT_EQ_STR(req.uri, "/");
-  EXPECT_EQ(req.query, NULL);
+  EXPECT(req.query == NULL);
   EXPECT_EQ_STR(webb_get_header(&req, "content-length"), "11");
   EXPECT_EQ_STR(req.body, "hello world");
-  EXPECT_EQ(req.body_len, 11);
+  EXPECT(req.body_len == 11);
   http_req_free(&req);
 }
 
 TEST(test_missing_final_newline) {
   const char *request = "GET / HTTP/1.1\r\n";
-  ASSERT_EQ(str_conn_open(&conn, request), 0);
+  ASSERT(str_conn_open(&conn, request) == 0);
 
-  EXPECT_NE(http_parse_req(&conn.c, &req), 0);
+  EXPECT(http_parse_req(&conn.c, &req) != 0);
   http_req_free(&req);
 
-  ASSERT_EQ(str_conn_close(&conn), 0);
+  ASSERT(str_conn_close(&conn) == 0);
 }
 
 TEST(test_invalid_http_version) {
-  ASSERT_EQ(str_conn_open(&conn, ""), 0);
+  ASSERT(str_conn_open(&conn, "") == 0);
 
-#define INVALID_VERSION_TEST(version)                                \
-  ASSERT_EQ(str_conn_reopen(&conn, "GET / " version "\r\n\r\n"), 0); \
-  EXPECT_NE(http_parse_req(&conn.c, &req), 0);                       \
+#define INVALID_VERSION_TEST(version)                               \
+  ASSERT(str_conn_reopen(&conn, "GET / " version "\r\n\r\n") == 0); \
+  EXPECT(http_parse_req(&conn.c, &req) != 0);                       \
   http_req_free(&req)
 
   INVALID_VERSION_TEST("");
@@ -89,7 +89,7 @@ TEST(test_invalid_http_version) {
   INVALID_VERSION_TEST("HTTP 1.1");
   INVALID_VERSION_TEST("FTP/1.1");
 
-  ASSERT_EQ(str_conn_close(&conn), 0);
+  ASSERT(str_conn_close(&conn) == 0);
 }
 
 TEST(test_multiple_requests_per_connection) {
@@ -97,22 +97,22 @@ TEST(test_multiple_requests_per_connection) {
     "GET / HTTP/1.1\r\n\r\n"
     "GET / HTTP/1.1\r\n\r\n"
     "GET / HTTP/1.1\r\n\r\n";
-  ASSERT_EQ(str_conn_open(&conn, request), 0);
+  ASSERT(str_conn_open(&conn, request) == 0);
 
   for (int i = 0; i < 3; i++) {
-    EXPECT_EQ(http_parse_req(&conn.c, &req), 0);
-    EXPECT_EQ(req.method, WEBB_GET);
+    EXPECT(http_parse_req(&conn.c, &req) == 0);
+    EXPECT(req.method == WEBB_GET);
     EXPECT_EQ_STR(req.uri, "/");
-    EXPECT_EQ(req.query, NULL);
-    EXPECT_EQ(req.headers, NULL);
-    EXPECT_EQ(req.body, NULL);
-    EXPECT_EQ(req.body_len, 0);
+    EXPECT(req.query == NULL);
+    EXPECT(req.headers == NULL);
+    EXPECT(req.body == NULL);
+    EXPECT(req.body_len == 0);
     http_req_free(&req);
   }
-  EXPECT_NE(http_parse_req(&conn.c, &req), 0);
+  EXPECT(http_parse_req(&conn.c, &req) != 0);
   http_req_free(&req);
 
-  ASSERT_EQ(str_conn_close(&conn), 0);
+  ASSERT(str_conn_close(&conn) == 0);
 }
 
 TEST(test_max_header_limit) {
@@ -123,17 +123,17 @@ TEST(test_max_header_limit) {
   (void) sprintf(ptr, "\r\n");
 
   // should parse ok with one less than the maximum
-  ASSERT_EQ(str_conn_open(&conn, request), 0);
-  EXPECT_EQ(http_parse_req(&conn.c, &req), 0);
+  ASSERT(str_conn_open(&conn, request) == 0);
+  EXPECT(http_parse_req(&conn.c, &req) == 0);
   http_req_free(&req);
 
   // should fail to parse with exactly the maximum
   (void) sprintf(ptr, "Header-%d: Value\r\n\r\n", MAX_HEADERS);
-  ASSERT_EQ(str_conn_reopen(&conn, request), 0);
-  EXPECT_NE(http_parse_req(&conn.c, &req), 0);
+  ASSERT(str_conn_reopen(&conn, request) == 0);
+  EXPECT(http_parse_req(&conn.c, &req) != 0);
   http_req_free(&req);
 
-  ASSERT_EQ(str_conn_close(&conn), 0);
+  ASSERT(str_conn_close(&conn) == 0);
 }
 
 TEST_MAIN(
