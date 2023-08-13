@@ -1,4 +1,4 @@
-.PHONY: help build run test fmt fmt-check lint clean
+.PHONY: build run test fmt fmt-check lint clean help
 .DEFAULT_GOAL  := help
 .EXTRA_PREREQS := $(MAKEFILE_LIST)
 
@@ -11,17 +11,17 @@ FILES := $(wildcard src/* tests/* bin/* include/webb/*)
 CC     := gcc
 CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow
 
-out/obj/%.o: src/%.c src/internal.h include/webb/webb.h
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -o $@ $< -Iinclude -c
+out:
+	mkdir -p out/obj out/tests out/bin
+
+out/obj/%.o: src/%.c src/internal.h include/webb/webb.h | out
+	$(CC) $(CFLAGS) -Iinclude -o $@ $< -c
 
 out/tests/%: tests/%.c $(LIB)
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -o $@ $^ -Iinclude -Isrc
+	$(CC) $(CFLAGS) -Iinclude -o $@ $^ -Isrc
 
 out/bin/%: bin/%.c $(LIB)
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -o $@ $^ -Iinclude
+	$(CC) $(CFLAGS) -Iinclude -o $@ $^
 
 $(LIB): $(OBJS)
 	$(AR) rc $@ $^
