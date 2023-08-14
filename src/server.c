@@ -1,4 +1,5 @@
 #include <netdb.h>
+#include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +12,12 @@
 #include "webb/webb.h"
 
 #define BACKLOG 10
+
+typedef struct ThreadPayload {
+  pthread_t tid;
+  int fd;
+  WebbHandler *handler_fn;
+} ThreadPayload;
 
 static int open_server_socket(const char *port) {
   struct addrinfo *servinfo = NULL;
@@ -90,6 +97,33 @@ static int send_response(int connfd, const WebbResponse *res) {
   return 0;
 }
 
+static void *handle_request(void *arg) {
+  ThreadPayload *payload = arg;
+  HttpConnection conn = {.fd = payload->fd};
+  WebbRequest req;
+  WebbResponse res = {0};
+
+  if (http_parse_req(&conn, &req)) {
+    (void) fprintf(stderr, "failed to parse http request!\n");
+    res.status = 400;
+  } else {
+    res.status = payload->handler_fn(&req, &res);
+    if (res.status < 0) {
+      (void) fprintf(stderr, "Request handler failed!\n");
+      res.status = 500;
+    }
+  }
+  if (send_response(conn.fd, &res))
+    (void) fprintf(stderr, "Sending response failed!\n");
+  http_req_free(&req);
+  http_res_free(&res);
+
+  if (close(conn.fd) == -1)
+    perror("close");
+  free(payload);
+  return NULL;
+}
+
 int webb_server_run(const char *port, WebbHandler *handler_fn) {
   int sockfd = open_server_socket(port);
   if (sockfd == -1)
@@ -97,39 +131,21 @@ int webb_server_run(const char *port, WebbHandler *handler_fn) {
   struct sockaddr_storage addr;
   socklen_t addrsize = sizeof(addr);
   while (1) {
-    int connfd = accept(sockfd, (struct sockaddr *) &addr, &addrsize);
-    if (connfd == -1) {
+    int fd = accept(sockfd, (struct sockaddr *) &addr, &addrsize);
+    if (fd == -1) {
       perror("accept");
       break;
     }
 
-    HttpConnection conn = {.fd = connfd};
-    WebbRequest req;
-    WebbResponse res = {0};
-
-    if (http_parse_req(&conn, &req)) {
-      (void) fprintf(stderr, "failed to parse http request!\n");
-      res.status = 400;
-    } else {
-      res.status = handler_fn(&req, &res);
-      if (res.status < 0) {
-        (void) fprintf(stderr, "Request handler failed!\n");
-        res.status = 500;
-      }
-    }
-    if (send_response(connfd, &res)) {
-      (void) fprintf(stderr, "Sending response failed!\n");
-      break;
-    }
-    http_req_free(&req);
-    http_res_free(&res);
-
-    if (close(connfd) == -1) {
-      perror("close");
+    ThreadPayload *payload = malloc(sizeof(ThreadPayload));
+    payload->fd = fd;
+    payload->handler_fn = handler_fn;
+    if (pthread_create(&payload->tid, NULL, handle_request, payload) != 0) {
+      perror("pthread_create");
+      free(payload);
       break;
     }
   }
-
   close(sockfd);
   return 1;
 }

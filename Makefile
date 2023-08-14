@@ -9,7 +9,7 @@ TESTS := $(patsubst tests/%.c,out/tests/%,$(wildcard tests/*.c))
 FILES := $(wildcard src/* tests/* bin/* include/webb/*)
 
 CC     := gcc
-CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow
+CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -pthread
 
 out:
 	mkdir -p out/obj out/tests out/bin
