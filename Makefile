@@ -47,7 +47,7 @@ fmt-check:
 
 #@ Lint all source files, using clang-tidy
 lint:
-	clang-tidy $(FILES) -- -Isrc -Iinclude -std=gnu99
+	python3 clang-tidy.py $(FILES) -- -std=gnu99 -Isrc -Iinclude
 
 #@ Remove all make artifacts
 clean:
