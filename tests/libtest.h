@@ -20,8 +20,8 @@
 #define EXPECT(expr) INTERNAL_ASSERT(0, expr, #expr)
 #define ASSERT(expr) INTERNAL_ASSERT(1, expr, #expr)
 
-#define EXPECT_EQ_STR(a, b) INTERNAL_ASSERT(0, strcmp((a), (b)) == 0, #a " == " #b);
-#define ASSERT_EQ_STR(a, b) INTERNAL_ASSERT(1, strcmp((a), (b)) == 0, #a " == " #b);
+#define EXPECT_EQ_STR(a, b) INTERNAL_ASSERT(0, strcmp((a), (b)) == 0, #a " == " #b)
+#define ASSERT_EQ_STR(a, b) INTERNAL_ASSERT(1, strcmp((a), (b)) == 0, #a " == " #b)
 
 typedef struct {
   void (*fn)(int *);
