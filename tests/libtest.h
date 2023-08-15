@@ -10,7 +10,7 @@
 #define INTERNAL_ASSERT(assert, expr, msg)                                       \
   do {                                                                           \
     if (!(expr)) {                                                               \
-      (void) fprintf(stderr, "%s:%d - expected: " msg "\n", FILENAME, __LINE__); \
+      (void) fprintf(stderr, "%s:%d - expected: %s\n", FILENAME, __LINE__, msg); \
       *test_failed = 1;                                                          \
       if (assert)                                                                \
         return;                                                                  \
