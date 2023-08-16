@@ -97,28 +97,76 @@ static int send_response(int connfd, const WebbResponse *res) {
   return 0;
 }
 
-static void *handle_request(void *arg) {
-  ThreadPayload *payload = arg;
-  HttpConnection conn = {.fd = payload->fd};
-  WebbRequest req;
-  WebbResponse res = {0};
+static WebbResult parse_request(int fd, WebbRequest *req) {
+  HttpParseState state = {0};
+  while (state.step != PARSE_STEP_COMPLETE) {
+    memmove(state.buf, state.buf + state.i, state.read - state.i);
+    state.read -= state.i;
+    state.i = 0;
+    ssize_t nread = read(fd, state.buf + state.read, sizeof(state.buf) - state.read);
+    if (nread == -1) {
+      perror("read");
+      return RESULT_UNEXPECTED;
+    }
+    if (nread == 0)
+      return RESULT_DISCONNECTED;
+    state.read += nread;
+    WebbResult res = http_parse_step(&state, req);
+    if (res != RESULT_OK)
+      return res;
+  }
 
-  if (http_parse_req(&conn, &req)) {
-    (void) fprintf(stderr, "failed to parse http request!\n");
-    res.status = 400;
-  } else {
-    res.status = payload->handler_fn(&req, &res);
-    if (res.status < 0) {
-      (void) fprintf(stderr, "Request handler failed!\n");
-      res.status = 500;
+  // read the body if we have one
+  if (req->body_len > 0) {
+    req->body = malloc(req->body_len + 1);
+    size_t i = state.read - state.i;
+    memcpy(req->body, state.buf + state.i, i > req->body_len ? req->body_len : i);
+    state.i = state.read;
+
+    for (ssize_t nread = -1; i < req->body_len; i += nread) {
+      nread = read(fd, req->body + i, req->body_len - i);
+      if (nread == -1) {
+        perror("read");
+        return RESULT_UNEXPECTED;
+      }
+      if (nread == 0)
+        return RESULT_DISCONNECTED;
     }
   }
-  if (send_response(conn.fd, &res))
-    (void) fprintf(stderr, "Sending response failed!\n");
-  http_req_free(&req);
-  http_res_free(&res);
+  return RESULT_OK;
+}
 
-  if (close(conn.fd) == -1)
+static void *handle_request(void *arg) {
+  ThreadPayload *payload = arg;
+  while (1) {
+    WebbRequest req;
+    WebbResponse res = {0};
+    switch (http_parse_req(payload->fd, &req)) {
+    case RESULT_OK:
+      res.status = payload->handler_fn(&req, &res);
+      if (res.status < 0) {
+        (void) fprintf(stderr, "Request handler failed!\n");
+        res.status = 500;
+      }
+      break;
+    case RESULT_INVALID_HTTP:
+      (void) fprintf(stderr, "failed to parse http request!\n");
+      res.status = 400;
+      break;
+    case RESULT_DISCONNECTED:
+      (void) fprintf(stderr, "client disconnected\n");
+      http_req_free(&req);
+      goto done;
+    default: (void) fprintf(stderr, "unexpected error when parsing request!\n"); res.status = 500;
+    }
+    if (send_response(payload->fd, &res))
+      (void) fprintf(stderr, "sending response failed!\n");
+    http_req_free(&req);
+    http_res_free(&res);
+  }
+
+done:
+  if (close(payload->fd) == -1)
     perror("close");
   free(payload);
   return NULL;
@@ -148,49 +196,4 @@ int webb_server_run(const char *port, WebbHandler *handler_fn) {
   }
   close(sockfd);
   return 1;
-}
-
-const char *http_conn_next(HttpConnection *c) {
-  while (1) {
-    for (size_t i = c->i; i + 1 < c->read; i++) {
-      if (memcmp(c->buf + i, "\r\n", 2) == 0) {
-        char *res = c->buf + c->i;
-        c->i = i + 2;
-        c->buf[i] = '\0';
-        return res;
-      }
-    }
-    if (c->read == sizeof(c->buf))
-      return NULL;
-
-    memmove(c->buf, c->buf + c->i, c->read - c->i);
-    c->read -= c->i;
-    c->i = 0;
-
-    ssize_t nread = read(c->fd, c->buf + c->read, sizeof(c->buf) - c->read);
-    if (nread == -1) {
-      perror("recv");
-      return NULL;
-    }
-    if (nread == 0)
-      return NULL;
-    c->read += nread;
-  }
-}
-
-int http_conn_read_buf(HttpConnection *c, char *buf, size_t len) {
-  size_t i = c->read - c->i;
-  memcpy(buf, c->buf + c->i, i > len ? len : i);
-  c->i = c->read;
-
-  for (ssize_t nread = -1; i < len; i += nread) {
-    nread = read(c->fd, buf + i, len - i);
-    if (nread == -1) {
-      perror("read");
-      return 1;
-    }
-    if (nread == 0)
-      return 1;
-  }
-  return 0;
 }
