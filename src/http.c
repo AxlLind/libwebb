@@ -156,75 +156,103 @@ static WebbMethod parse_http_method(const char *method, size_t len) {
   return WEBB_INVALID;
 }
 
-int http_parse_req(HttpConnection *conn, WebbRequest *req) {
-  memset(req, 0, sizeof(*req));
-
-  // parse http verb, ends with a space
-  const char *line = http_conn_next(conn);
-  if (!line)
-    return 1;
-  char *verb_end = strchr(line, ' ');
-  req->method = parse_http_method(line, verb_end ? verb_end - line : 0);
-  if (req->method == WEBB_INVALID)
-    return 1;
-
-  // parse uri, ends with a space
-  line = verb_end + 1;
-  char *qs_end = strchr(line, ' '), *uri_end = qs_end;
-  if (!qs_end)
-    return 1;
-  char *query_start = memchr(line, '?', qs_end - line);
-  if (query_start) {
-    req->query = strndup(query_start + 1, qs_end - query_start - 1);
-    uri_end = query_start;
-  }
-  req->uri = uri_decode(line, uri_end - line);
-  if (!req->uri)
-    return 1;
-
-  // parse the required HTTP/1.1 trailer
-  if (strcmp(qs_end + 1, "HTTP/1.1") != 0)
-    return 1;
-
-  // parse each header
-  for (size_t i = 0;; i++) {
-    line = http_conn_next(conn);
-    if (!line)
-      return 1;
-
-    // empty line means end of headers
-    if (strcmp(line, "") == 0)
-      break;
-
-    char *header_mid = strstr(line, ": ");
-    if (!header_mid)
-      return 1;
-
-    WebbHeaders *header = malloc(sizeof(WebbHeaders));
-    header->key = strndup(line, header_mid - line);
-    header->val = strdup(header_mid + 2);
-    header->next = req->headers;
-    req->headers = header;
-
-    // limit the number of headers to prevent DOS
-    if (i == MAX_HEADERS)
-      return 1;
-  }
-
-  const char *content_length = webb_get_header(req, "content-length");
-  if (content_length) {
-    ssize_t length = strtol(content_length, NULL, 10);
-    if (length > 0) {
-      req->body_len = (size_t) length;
-      req->body = malloc(req->body_len + 1);
-      if (!req->body)
-        return 1;
-      req->body[req->body_len] = '\0';
-      if (http_conn_read_buf(conn, req->body, req->body_len))
-        return 1;
+const char *http_next_line(HttpParseState *s) {
+  for (size_t i = s->i; i + 1 < s->read; i++) {
+    if (s->buf[i] == '\r' && s->buf[i + 1] == '\n') {
+      char *line = s->buf + s->i;
+      s->i = i + 2;
+      s->buf[i] = '\0';
+      return line;
     }
   }
-  return 0;
+  return NULL;
+}
+
+WebbResult http_parse_step(HttpParseState *state, WebbRequest *req) {
+  while (1) {
+    switch (state->step) {
+    case PARSE_STEP_INIT: {
+      memset(req, 0, sizeof(*req));
+      const char *line = http_next_line(state);
+      if (!line) {
+        if (state->read == sizeof(state->buf))
+          return RESULT_INVALID_HTTP;
+        return RESULT_NEED_DATA;
+      }
+
+      // parse http verb, ends with a space
+      char *verb_end = strchr(line, ' ');
+      if (!verb_end)
+        return RESULT_INVALID_HTTP;
+      req->method = parse_http_method(line, verb_end - line);
+      if (req->method == WEBB_INVALID)
+        return RESULT_INVALID_HTTP;
+
+      // parse uri, ends with a space
+      line = verb_end + 1;
+      char *qs_end = strchr(line, ' '), *uri_end = qs_end;
+      if (!qs_end)
+        return RESULT_INVALID_HTTP;
+      char *query_start = memchr(line, '?', qs_end - line);
+      if (query_start) {
+        req->query = strndup(query_start + 1, qs_end - query_start - 1);
+        uri_end = query_start;
+      }
+      req->uri = uri_decode(line, uri_end - line);
+      if (!req->uri)
+        return RESULT_INVALID_HTTP;
+
+      // parse the required HTTP/1.1 trailer
+      if (strcmp(qs_end + 1, "HTTP/1.1") != 0)
+        return RESULT_INVALID_HTTP;
+      state->step = PARSE_STEP_HEADERS;
+      break;
+    }
+    case PARSE_STEP_HEADERS: {
+      const char *line = http_next_line(state);
+      if (!line) {
+        if (state->read == sizeof(state->buf))
+          return RESULT_INVALID_HTTP;
+        return RESULT_NEED_DATA;
+      }
+      // empty line means end of headers
+      if (strcmp(line, "") == 0) {
+        state->step = PARSE_STEP_BODY;
+        break;
+      }
+
+      if (state->headers++ == MAX_HEADERS)
+        return RESULT_INVALID_HTTP;
+
+      char *header_mid = strstr(line, ": ");
+      if (!header_mid)
+        return RESULT_INVALID_HTTP;
+
+      WebbHeaders *header = malloc(sizeof(WebbHeaders));
+      header->key = strndup(line, header_mid - line);
+      header->val = strdup(header_mid + 2);
+      header->next = req->headers;
+      req->headers = header;
+      break;
+    }
+    case PARSE_STEP_BODY: {
+      const char *content_length = webb_get_header(req, "content-length");
+      if (content_length) {
+        ssize_t length = strtol(content_length, NULL, 10);
+        if (length > 0)
+          req->body_len = (size_t) length;
+      }
+      state->step = PARSE_STEP_COMPLETE;
+      break;
+    }
+    case PARSE_STEP_COMPLETE: return RESULT_OK;
+    }
+  }
+}
+
+void http_state_reset(HttpParseState *state) {
+  state->step = PARSE_STEP_INIT;
+  state->headers = 0;
 }
 
 static void free_headers(WebbHeaders *header, int allocated_keys) {

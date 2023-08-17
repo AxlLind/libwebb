@@ -97,28 +97,82 @@ static int send_response(int connfd, const WebbResponse *res) {
   return 0;
 }
 
+WebbResult parse_request(int fd, HttpParseState *state, WebbRequest *req) {
+  while (state->step != PARSE_STEP_COMPLETE) {
+    WebbResult res = http_parse_step(state, req);
+    switch (res) {
+    case RESULT_OK: break;
+    case RESULT_NEED_DATA:
+      memmove(state->buf, state->buf + state->i, state->read - state->i);
+      state->read -= state->i;
+      state->i = 0;
+      ssize_t nread = read(fd, state->buf + state->read, sizeof(state->buf) - state->read);
+      if (nread == -1) {
+        perror("read");
+        return RESULT_UNEXPECTED;
+      }
+      if (nread == 0)
+        return RESULT_DISCONNECTED;
+      state->read += nread;
+      break;
+    default: return res;
+    }
+  }
+
+  if (req->body_len > (size_t) MAX_BODY_LEN)
+    return RESULT_INVALID_HTTP;
+
+  // read the body if we have one
+  if (req->body_len > 0) {
+    req->body = malloc(req->body_len + 1);
+    if (!req->body)
+      return RESULT_OOM;
+    size_t i = state->read - state->i;
+    memcpy(req->body, state->buf + state->i, i > req->body_len ? req->body_len : i);
+    state->i = state->read;
+    for (ssize_t nread = -1; i < req->body_len; i += nread) {
+      nread = read(fd, req->body + i, req->body_len - i);
+      if (nread == -1) {
+        perror("read");
+        return RESULT_UNEXPECTED;
+      }
+      if (nread == 0)
+        return RESULT_DISCONNECTED;
+    }
+  }
+  return RESULT_OK;
+}
+
 static void *handle_request(void *arg) {
   ThreadPayload *payload = arg;
-  HttpConnection conn = {.fd = payload->fd};
-  WebbRequest req;
+  HttpParseState state = {0};
+  WebbRequest req = {0};
   WebbResponse res = {0};
-
-  if (http_parse_req(&conn, &req)) {
-    (void) fprintf(stderr, "failed to parse http request!\n");
-    res.status = 400;
-  } else {
+  switch (parse_request(payload->fd, &state, &req)) {
+  case RESULT_OK:
     res.status = payload->handler_fn(&req, &res);
     if (res.status < 0) {
       (void) fprintf(stderr, "Request handler failed!\n");
       res.status = 500;
     }
+    break;
+  case RESULT_INVALID_HTTP:
+    (void) fprintf(stderr, "failed to parse http request!\n");
+    res.status = 400;
+    break;
+  case RESULT_DISCONNECTED: goto done;
+  default:
+    (void) fprintf(stderr, "unexpected error when parsing request!\n");
+    res.status = 500;
+    break;
   }
-  if (send_response(conn.fd, &res))
-    (void) fprintf(stderr, "Sending response failed!\n");
+  if (send_response(payload->fd, &res))
+    (void) fprintf(stderr, "sending response failed!\n");
   http_req_free(&req);
   http_res_free(&res);
 
-  if (close(conn.fd) == -1)
+done:
+  if (close(payload->fd) == -1)
     perror("close");
   free(payload);
   return NULL;
@@ -148,49 +202,4 @@ int webb_server_run(const char *port, WebbHandler *handler_fn) {
   }
   close(sockfd);
   return 1;
-}
-
-const char *http_conn_next(HttpConnection *c) {
-  while (1) {
-    for (size_t i = c->i; i + 1 < c->read; i++) {
-      if (memcmp(c->buf + i, "\r\n", 2) == 0) {
-        char *res = c->buf + c->i;
-        c->i = i + 2;
-        c->buf[i] = '\0';
-        return res;
-      }
-    }
-    if (c->read == sizeof(c->buf))
-      return NULL;
-
-    memmove(c->buf, c->buf + c->i, c->read - c->i);
-    c->read -= c->i;
-    c->i = 0;
-
-    ssize_t nread = read(c->fd, c->buf + c->read, sizeof(c->buf) - c->read);
-    if (nread == -1) {
-      perror("recv");
-      return NULL;
-    }
-    if (nread == 0)
-      return NULL;
-    c->read += nread;
-  }
-}
-
-int http_conn_read_buf(HttpConnection *c, char *buf, size_t len) {
-  size_t i = c->read - c->i;
-  memcpy(buf, c->buf + c->i, i > len ? len : i);
-  c->i = c->read;
-
-  for (ssize_t nread = -1; i < len; i += nread) {
-    nread = read(c->fd, buf + i, len - i);
-    if (nread == -1) {
-      perror("read");
-      return 1;
-    }
-    if (nread == 0)
-      return 1;
-  }
-  return 0;
 }

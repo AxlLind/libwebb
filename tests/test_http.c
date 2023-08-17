@@ -1,11 +1,26 @@
 #include <stdio.h>
 #include "internal.h"
 #include "libtest.h"
-#include "str_conn.h"
+#include "tmpfile.h"
 #include "webb/webb.h"
 
-static StrConnection conn;
+static TmpFile file;
+static HttpParseState state;
 static WebbRequest req;
+
+static int open_request(const char *request) {
+  if (tmpfile_open(&file, request) != 0)
+    return 1;
+  memset(&state, 0, sizeof(state));
+  return 0;
+}
+
+static int reopen_request(const char *request) {
+  if (tmpfile_reopen(&file, request) != 0)
+    return 1;
+  memset(&state, 0, sizeof(state));
+  return 0;
+}
 
 TEST(test_parse_curl_example) {
   const char *request =
@@ -14,8 +29,8 @@ TEST(test_parse_curl_example) {
     "User-Agent: curl/7.77.0\r\n"
     "Accept: */*\r\n"
     "\r\n";
-  ASSERT(str_conn_open(&conn, request) == 0);
-  ASSERT(http_parse_req(&conn.c, &req) == 0);
+  ASSERT(open_request(request) == 0);
+  ASSERT(parse_request(file.fd, &state, &req) == RESULT_OK);
 
   EXPECT(req.method == WEBB_GET);
   EXPECT_EQ_STR(req.uri, "/test/a.txt");
@@ -27,13 +42,13 @@ TEST(test_parse_curl_example) {
   EXPECT(req.body_len == 0);
   http_req_free(&req);
 
-  ASSERT(str_conn_close(&conn) == 0);
+  ASSERT(tmpfile_close(&file) == 0);
 }
 
 TEST(test_parse_minimal_request) {
   const char *request = "GET / HTTP/1.1\r\n\r\n";
-  ASSERT(str_conn_open(&conn, request) == 0);
-  ASSERT(http_parse_req(&conn.c, &req) == 0);
+  ASSERT(open_request(request) == 0);
+  ASSERT(parse_request(file.fd, &state, &req) == RESULT_OK);
 
   EXPECT(req.method == WEBB_GET);
   EXPECT_EQ_STR(req.uri, "/");
@@ -43,7 +58,7 @@ TEST(test_parse_minimal_request) {
   EXPECT(req.body_len == 0);
   http_req_free(&req);
 
-  ASSERT(str_conn_close(&conn) == 0);
+  ASSERT(tmpfile_close(&file) == 0);
 }
 
 TEST(test_parse_request_body) {
@@ -52,8 +67,8 @@ TEST(test_parse_request_body) {
     "Content-Length: 11\r\n"
     "\r\n"
     "hello world";
-  ASSERT(str_conn_open(&conn, request) == 0);
-  ASSERT(http_parse_req(&conn.c, &req) == 0);
+  ASSERT(open_request(request) == 0);
+  ASSERT(parse_request(file.fd, &state, &req) == RESULT_OK);
 
   EXPECT(req.method == WEBB_POST);
   EXPECT_EQ_STR(req.uri, "/");
@@ -66,21 +81,21 @@ TEST(test_parse_request_body) {
 
 TEST(test_missing_final_newline) {
   const char *request = "GET / HTTP/1.1\r\n";
-  ASSERT(str_conn_open(&conn, request) == 0);
+  ASSERT(open_request(request) == 0);
 
-  EXPECT(http_parse_req(&conn.c, &req) != 0);
+  EXPECT(parse_request(file.fd, &state, &req) != RESULT_OK);
   http_req_free(&req);
 
-  ASSERT(str_conn_close(&conn) == 0);
+  ASSERT(tmpfile_close(&file) == 0);
 }
 
 TEST(test_invalid_http_version) {
-  ASSERT(str_conn_open(&conn, "") == 0);
+  ASSERT(open_request("") == 0);
 
-#define INVALID_VERSION_TEST(version)                               \
-  ASSERT(str_conn_reopen(&conn, "GET / " version "\r\n\r\n") == 0); \
-  EXPECT(http_parse_req(&conn.c, &req) != 0);                       \
-  http_req_free(&req)
+#define INVALID_VERSION_TEST(version)                        \
+  ASSERT(reopen_request("GET / " version "\r\n\r\n") == 0);  \
+  EXPECT(parse_request(file.fd, &state, &req) != RESULT_OK); \
+  http_req_free(&req);
 
   INVALID_VERSION_TEST("");
   INVALID_VERSION_TEST("HTTP/1.0");
@@ -89,7 +104,7 @@ TEST(test_invalid_http_version) {
   INVALID_VERSION_TEST("HTTP 1.1");
   INVALID_VERSION_TEST("FTP/1.1");
 
-  ASSERT(str_conn_close(&conn) == 0);
+  ASSERT(tmpfile_close(&file) == 0);
 }
 
 TEST(test_multiple_requests_per_connection) {
@@ -97,10 +112,10 @@ TEST(test_multiple_requests_per_connection) {
     "GET / HTTP/1.1\r\n\r\n"
     "GET / HTTP/1.1\r\n\r\n"
     "GET / HTTP/1.1\r\n\r\n";
-  ASSERT(str_conn_open(&conn, request) == 0);
+  ASSERT(open_request(request) == 0);
 
   for (int i = 0; i < 3; i++) {
-    EXPECT(http_parse_req(&conn.c, &req) == 0);
+    EXPECT(parse_request(file.fd, &state, &req) == RESULT_OK);
     EXPECT(req.method == WEBB_GET);
     EXPECT_EQ_STR(req.uri, "/");
     EXPECT(req.query == NULL);
@@ -108,11 +123,12 @@ TEST(test_multiple_requests_per_connection) {
     EXPECT(req.body == NULL);
     EXPECT(req.body_len == 0);
     http_req_free(&req);
+    http_state_reset(&state);
   }
-  EXPECT(http_parse_req(&conn.c, &req) != 0);
+  EXPECT(parse_request(file.fd, &state, &req) != RESULT_OK);
   http_req_free(&req);
 
-  ASSERT(str_conn_close(&conn) == 0);
+  ASSERT(tmpfile_close(&file) == 0);
 }
 
 TEST(test_max_header_limit) {
@@ -123,17 +139,17 @@ TEST(test_max_header_limit) {
   (void) sprintf(ptr, "\r\n");
 
   // should parse ok with one less than the maximum
-  ASSERT(str_conn_open(&conn, request) == 0);
-  EXPECT(http_parse_req(&conn.c, &req) == 0);
+  ASSERT(open_request(request) == 0);
+  EXPECT(parse_request(file.fd, &state, &req) == RESULT_OK);
   http_req_free(&req);
 
   // should fail to parse with exactly the maximum
   (void) sprintf(ptr, "Header-%d: Value\r\n\r\n", MAX_HEADERS);
-  ASSERT(str_conn_reopen(&conn, request) == 0);
-  EXPECT(http_parse_req(&conn.c, &req) != 0);
+  ASSERT(reopen_request(request) == 0);
+  EXPECT(parse_request(file.fd, &state, &req) != RESULT_OK);
   http_req_free(&req);
 
-  ASSERT(str_conn_close(&conn) == 0);
+  ASSERT(tmpfile_close(&file) == 0);
 }
 
 TEST_MAIN(
