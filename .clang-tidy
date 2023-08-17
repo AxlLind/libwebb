@@ -12,11 +12,10 @@ Checks: >
   -readability-identifier-length,
   -readability-isolate-declaration,
   -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
 CheckOptions:
   - key: readability-braces-around-statements.ShortStatementLines
     value: 2
-  - key: readability-function-cognitive-complexity.IgnoreMacros
-    value: true
 WarningsAsErrors: '*'
 HeaderFilterRegex: ''
 FormatStyle: file
