@@ -7,17 +7,22 @@
 #include "libtest.h"
 #include "webb/webb.h"
 
-pid_t start_child_server(WebbHandler *handler) {
+pid_t start_child_server(WebbHandler *handler, const char *port) {
   pid_t pid = fork();
   if (pid == 0)
-    exit(webb_server_run("9898", handler));
+    exit(webb_server_run(port, handler));
   if (pid == -1)
     perror("fork");
   return pid;
 }
 
 int open_webb_socket(WebbHandler *handler, pid_t *pid) {
-  *pid = start_child_server(handler);
+  // get a new port everytime due to OS race conditions when killing child process
+  static int port_counter = 9000;
+  char port[5];
+  (void) sprintf(port, "%d", port_counter++);
+
+  *pid = start_child_server(handler, port);
   if (*pid == -1)
     return -1;
   struct addrinfo hints = {.ai_family = AF_UNSPEC, .ai_socktype = SOCK_STREAM};
@@ -25,7 +30,7 @@ int open_webb_socket(WebbHandler *handler, pid_t *pid) {
 
   // try multiple times to give server time to start
   for (int i = 0; i < 1000; i++) {
-    if (getaddrinfo("localhost", "9898", &hints, &servinfo) != 0) {
+    if (getaddrinfo("localhost", port, &hints, &servinfo) != 0) {
       perror("getaddrinfo");
       return -1;
     }
