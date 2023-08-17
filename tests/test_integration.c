@@ -65,7 +65,7 @@ TEST(test_sending_minimal_request) {
   ASSERT(pid != -1);
 
   const char *request = "GET / HTTP/1.1\r\n\r\n";
-  EXPECT(send(fd, request, strlen(request), 0) != -1);
+  EXPECT(send(fd, request, strlen(request), 0) == (ssize_t) strlen(request));
 
   char res[4096];
   ssize_t nread = read(fd, res, sizeof(res));
@@ -75,11 +75,36 @@ TEST(test_sending_minimal_request) {
   EXPECT(memcmp(res, "HTTP/1.1 200 OK\r\n", 17) == 0);
   EXPECT(strstr(res, "x-libwebb-test: cool value\r\n"));
   EXPECT(strstr(res, "server: libwebb 0.1\r\n"));
+  EXPECT(strstr(res, "connection: keep-alive\r\n"));
   EXPECT(strstr(res, "date: "));
-  EXPECT(strstr(res, "connection: "));
 
   EXPECT(close(fd) != -1);
   ASSERT(kill(pid, SIGKILL) != -1);
 }
 
-TEST_MAIN(test_sending_minimal_request)
+TEST(test_multiple_requests_per_connection) {
+  pid_t pid;
+  int fd = open_webb_socket(test_handler, &pid);
+  ASSERT(fd != -1);
+  ASSERT(pid != -1);
+
+  const char *request = "GET / HTTP/1.1\r\n\r\n";
+  for (int i = 0; i < 1000; i++) {
+    EXPECT(send(fd, request, strlen(request), 0) == (ssize_t) strlen(request));
+    char res[4096];
+    ssize_t nread = read(fd, res, sizeof(res));
+    EXPECT(nread > 17);
+    EXPECT(nread < (ssize_t) sizeof(res));
+    res[nread] = '\0';
+    EXPECT(memcmp(res, "HTTP/1.1 200 OK\r\n", 17) == 0);
+    EXPECT(strstr(res, "x-libwebb-test: cool value\r\n"));
+    EXPECT(strstr(res, "server: libwebb 0.1\r\n"));
+    EXPECT(strstr(res, "connection: keep-alive\r\n"));
+    EXPECT(strstr(res, "date: "));
+  }
+
+  EXPECT(close(fd) != -1);
+  ASSERT(kill(pid, SIGKILL) != -1);
+}
+
+TEST_MAIN(test_sending_minimal_request, test_multiple_requests_per_connection)

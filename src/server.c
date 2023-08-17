@@ -86,7 +86,7 @@ static int send_response(int connfd, const WebbResponse *res) {
   struct tm *tm = gmtime(&now);
   bufptr += strftime(bufptr, buf + sizeof(buf) - bufptr, "date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm);
   bufptr += sprintf(bufptr, "server: libwebb 0.1\r\n");
-  bufptr += sprintf(bufptr, "connection: close\r\n");
+  bufptr += sprintf(bufptr, "connection: keep-alive\r\n");
   if (res->body_len)
     bufptr += sprintf(bufptr, "content-length: %zu\r\n", res->body_len);
   bufptr += sprintf(bufptr, "\r\n");
@@ -146,30 +146,33 @@ WebbResult parse_request(int fd, HttpParseState *state, WebbRequest *req) {
 static void *handle_request(void *arg) {
   ThreadPayload *payload = arg;
   HttpParseState state = {0};
-  WebbRequest req = {0};
-  WebbResponse res = {0};
-  switch (parse_request(payload->fd, &state, &req)) {
-  case RESULT_OK:
-    res.status = payload->handler_fn(&req, &res);
-    if (res.status < 0) {
-      (void) fprintf(stderr, "Request handler failed!\n");
+  while (1) {
+    WebbRequest req = {0};
+    WebbResponse res = {0};
+    switch (parse_request(payload->fd, &state, &req)) {
+    case RESULT_OK:
+      res.status = payload->handler_fn(&req, &res);
+      if (res.status < 0) {
+        (void) fprintf(stderr, "Request handler failed!\n");
+        res.status = 500;
+      }
+      break;
+    case RESULT_INVALID_HTTP:
+      (void) fprintf(stderr, "failed to parse http request!\n");
+      res.status = 400;
+      break;
+    case RESULT_DISCONNECTED: goto done;
+    default:
+      (void) fprintf(stderr, "unexpected error when parsing request!\n");
       res.status = 500;
+      break;
     }
-    break;
-  case RESULT_INVALID_HTTP:
-    (void) fprintf(stderr, "failed to parse http request!\n");
-    res.status = 400;
-    break;
-  case RESULT_DISCONNECTED: goto done;
-  default:
-    (void) fprintf(stderr, "unexpected error when parsing request!\n");
-    res.status = 500;
-    break;
+    if (send_response(payload->fd, &res))
+      (void) fprintf(stderr, "sending response failed!\n");
+    http_req_free(&req);
+    http_res_free(&res);
+    http_state_reset(&state);
   }
-  if (send_response(payload->fd, &res))
-    (void) fprintf(stderr, "sending response failed!\n");
-  http_req_free(&req);
-  http_res_free(&res);
 
 done:
   if (close(payload->fd) == -1)
