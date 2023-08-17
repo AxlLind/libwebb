@@ -4,11 +4,11 @@
 #include <stddef.h>
 #include "webb/webb.h"
 
-#define MAX_HEADERS 64
+#define MAX_HEADERS  64
+#define MAX_BODY_LEN (2 * 1024 * 1024)  // 2mb
 
 typedef enum WebbResult {
   RESULT_OK = 0,
-  RESULT_LINE_TOO_LONG,
   RESULT_INVALID_HTTP,
   RESULT_OOM,
   RESULT_UNEXPECTED,

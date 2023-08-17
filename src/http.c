@@ -156,12 +156,12 @@ static WebbMethod parse_http_method(const char *method, size_t len) {
   return WEBB_INVALID;
 }
 
-const char *http_next_line(HttpParseState *state) {
-  for (size_t i = state->i; i + 1 < state->read; i++) {
-    if (memcmp(state->buf + i, "\r\n", 2) == 0) {
-      char *line = state->buf + state->i;
-      state->i = i + 2;
-      state->buf[i] = '\0';
+const char *http_next_line(HttpParseState *s) {
+  for (size_t i = s->i; i + 1 < s->read; i++) {
+    if (s->buf[i] == '\r' && s->buf[i + 1] == '\n') {
+      char *line = s->buf + s->i;
+      s->i = i + 2;
+      s->buf[i] = '\0';
       return line;
     }
   }
@@ -170,18 +170,21 @@ const char *http_next_line(HttpParseState *state) {
 
 WebbResult http_parse_step(HttpParseState *state, WebbRequest *req) {
   while (1) {
-    const char *line = http_next_line(state);
-    if (!line) {
-      if (state->read == sizeof(state->buf))
-        return RESULT_INVALID_HTTP;
-      // we need to read more from the client, not an error
-      return RESULT_OK;
-    }
     switch (state->step) {
     case PARSE_STEP_INIT: {
+      const char *line = http_next_line(state);
+      if (!line) {
+        if (state->read == sizeof(state->buf))
+          return RESULT_INVALID_HTTP;
+        // we need to read more from the client, not an error
+        return RESULT_OK;
+      }
+
       // parse http verb, ends with a space
       char *verb_end = strchr(line, ' ');
-      req->method = parse_http_method(line, verb_end ? verb_end - line : 0);
+      if (!verb_end)
+        return RESULT_INVALID_HTTP;
+      req->method = parse_http_method(line, verb_end - line);
       if (req->method == WEBB_INVALID)
         return RESULT_INVALID_HTTP;
 
@@ -206,6 +209,13 @@ WebbResult http_parse_step(HttpParseState *state, WebbRequest *req) {
       break;
     }
     case PARSE_STEP_HEADERS: {
+      const char *line = http_next_line(state);
+      if (!line) {
+        if (state->read == sizeof(state->buf))
+          return RESULT_INVALID_HTTP;
+        // we need to read more from the client, not an error
+        return RESULT_OK;
+      }
       // empty line means end of headers
       if (strcmp(line, "") == 0) {
         state->step = PARSE_STEP_BODY;
@@ -234,6 +244,7 @@ WebbResult http_parse_step(HttpParseState *state, WebbRequest *req) {
           req->body_len = (size_t) length;
       }
       state->step = PARSE_STEP_COMPLETE;
+      break;
     }
     case PARSE_STEP_COMPLETE: return RESULT_OK;
     }
