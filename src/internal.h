@@ -13,6 +13,7 @@ typedef enum WebbResult {
   RESULT_OOM,
   RESULT_UNEXPECTED,
   RESULT_DISCONNECTED,
+  RESULT_NEED_DATA,
 } WebbResult;
 
 typedef enum HttpParseStep {
@@ -31,6 +32,10 @@ typedef struct {
 } HttpParseState;
 
 WebbResult http_parse_step(HttpParseState *state, WebbRequest *req);
+
+WebbResult parse_request(int fd, HttpParseState *state, WebbRequest *req);
+
+void http_state_reset(HttpParseState *state);
 
 void http_req_free(WebbRequest *req);
 

@@ -86,7 +86,7 @@ static int send_response(int connfd, const WebbResponse *res) {
   struct tm *tm = gmtime(&now);
   bufptr += strftime(bufptr, buf + sizeof(buf) - bufptr, "date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm);
   bufptr += sprintf(bufptr, "server: libwebb 0.1\r\n");
-  bufptr += sprintf(bufptr, "connection: keep-alive\r\n");
+  bufptr += sprintf(bufptr, "connection: close\r\n");
   if (res->body_len)
     bufptr += sprintf(bufptr, "content-length: %zu\r\n", res->body_len);
   bufptr += sprintf(bufptr, "\r\n");
@@ -97,23 +97,26 @@ static int send_response(int connfd, const WebbResponse *res) {
   return 0;
 }
 
-static WebbResult parse_request(int fd, WebbRequest *req) {
-  HttpParseState state = {0};
-  while (state.step != PARSE_STEP_COMPLETE) {
-    memmove(state.buf, state.buf + state.i, state.read - state.i);
-    state.read -= state.i;
-    state.i = 0;
-    ssize_t nread = read(fd, state.buf + state.read, sizeof(state.buf) - state.read);
-    if (nread == -1) {
-      perror("read");
-      return RESULT_UNEXPECTED;
+WebbResult parse_request(int fd, HttpParseState *state, WebbRequest *req) {
+  while (state->step != PARSE_STEP_COMPLETE) {
+    WebbResult res = http_parse_step(state, req);
+    switch (res) {
+    case RESULT_OK: break;
+    case RESULT_NEED_DATA:
+      memmove(state->buf, state->buf + state->i, state->read - state->i);
+      state->read -= state->i;
+      state->i = 0;
+      ssize_t nread = read(fd, state->buf + state->read, sizeof(state->buf) - state->read);
+      if (nread == -1) {
+        perror("read");
+        return RESULT_UNEXPECTED;
+      }
+      if (nread == 0)
+        return RESULT_DISCONNECTED;
+      state->read += nread;
+      break;
+    default: return res;
     }
-    if (nread == 0)
-      return RESULT_DISCONNECTED;
-    state.read += nread;
-    WebbResult res = http_parse_step(&state, req);
-    if (res != RESULT_OK)
-      return res;
   }
 
   if (req->body_len > (size_t) MAX_BODY_LEN)
@@ -124,9 +127,9 @@ static WebbResult parse_request(int fd, WebbRequest *req) {
     req->body = malloc(req->body_len + 1);
     if (!req->body)
       return RESULT_OOM;
-    size_t i = state.read - state.i;
-    memcpy(req->body, state.buf + state.i, i > req->body_len ? req->body_len : i);
-    state.i = state.read;
+    size_t i = state->read - state->i;
+    memcpy(req->body, state->buf + state->i, i > req->body_len ? req->body_len : i);
+    state->i = state->read;
     for (ssize_t nread = -1; i < req->body_len; i += nread) {
       nread = read(fd, req->body + i, req->body_len - i);
       if (nread == -1) {
@@ -142,35 +145,31 @@ static WebbResult parse_request(int fd, WebbRequest *req) {
 
 static void *handle_request(void *arg) {
   ThreadPayload *payload = arg;
-  while (1) {
-    WebbRequest req = {0};
-    WebbResponse res = {0};
-    switch (parse_request(payload->fd, &req)) {
-    case RESULT_OK:
-      res.status = payload->handler_fn(&req, &res);
-      if (res.status < 0) {
-        (void) fprintf(stderr, "Request handler failed!\n");
-        res.status = 500;
-      }
-      break;
-    case RESULT_INVALID_HTTP:
-      (void) fprintf(stderr, "failed to parse http request!\n");
-      res.status = 400;
-      break;
-    case RESULT_DISCONNECTED:
-      (void) fprintf(stderr, "client disconnected\n");
-      http_req_free(&req);
-      goto done;
-    default:
-      (void) fprintf(stderr, "unexpected error when parsing request!\n");
+  HttpParseState state = {0};
+  WebbRequest req = {0};
+  WebbResponse res = {0};
+  switch (parse_request(payload->fd, &state, &req)) {
+  case RESULT_OK:
+    res.status = payload->handler_fn(&req, &res);
+    if (res.status < 0) {
+      (void) fprintf(stderr, "Request handler failed!\n");
       res.status = 500;
-      break;
     }
-    if (send_response(payload->fd, &res))
-      (void) fprintf(stderr, "sending response failed!\n");
-    http_req_free(&req);
-    http_res_free(&res);
+    break;
+  case RESULT_INVALID_HTTP:
+    (void) fprintf(stderr, "failed to parse http request!\n");
+    res.status = 400;
+    break;
+  case RESULT_DISCONNECTED: goto done;
+  default:
+    (void) fprintf(stderr, "unexpected error when parsing request!\n");
+    res.status = 500;
+    break;
   }
+  if (send_response(payload->fd, &res))
+    (void) fprintf(stderr, "sending response failed!\n");
+  http_req_free(&req);
+  http_res_free(&res);
 
 done:
   if (close(payload->fd) == -1)

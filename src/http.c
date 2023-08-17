@@ -172,12 +172,12 @@ WebbResult http_parse_step(HttpParseState *state, WebbRequest *req) {
   while (1) {
     switch (state->step) {
     case PARSE_STEP_INIT: {
+      memset(req, 0, sizeof(*req));
       const char *line = http_next_line(state);
       if (!line) {
         if (state->read == sizeof(state->buf))
           return RESULT_INVALID_HTTP;
-        // we need to read more from the client, not an error
-        return RESULT_OK;
+        return RESULT_NEED_DATA;
       }
 
       // parse http verb, ends with a space
@@ -213,8 +213,7 @@ WebbResult http_parse_step(HttpParseState *state, WebbRequest *req) {
       if (!line) {
         if (state->read == sizeof(state->buf))
           return RESULT_INVALID_HTTP;
-        // we need to read more from the client, not an error
-        return RESULT_OK;
+        return RESULT_NEED_DATA;
       }
       // empty line means end of headers
       if (strcmp(line, "") == 0) {
@@ -222,7 +221,7 @@ WebbResult http_parse_step(HttpParseState *state, WebbRequest *req) {
         break;
       }
 
-      if (++state->headers == MAX_HEADERS)
+      if (state->headers++ == MAX_HEADERS)
         return RESULT_INVALID_HTTP;
 
       char *header_mid = strstr(line, ": ");
@@ -249,6 +248,11 @@ WebbResult http_parse_step(HttpParseState *state, WebbRequest *req) {
     case PARSE_STEP_COMPLETE: return RESULT_OK;
     }
   }
+}
+
+void http_state_reset(HttpParseState *state) {
+  state->step = PARSE_STEP_INIT;
+  state->headers = 0;
 }
 
 static void free_headers(WebbHeaders *header, int allocated_keys) {
