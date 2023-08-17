@@ -23,7 +23,7 @@ typedef enum HttpParseStep {
   PARSE_STEP_COMPLETE,
 } HttpParseStep;
 
-typedef struct {
+typedef struct HttpParseState {
   HttpParseStep step;
   size_t headers;
   size_t read;

@@ -7,7 +7,7 @@
 
 static char *uri_decode(const char *s, size_t len) {
   // clang-format off
-  static const char tbl[256] = {
+  static const char HEX_LOOKUP[256] = {
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -34,8 +34,8 @@ static char *uri_decode(const char *s, size_t len) {
     } else if (c == '%') {
       if (i + 2 >= len)
         goto err;
-      char a = tbl[(unsigned char) s[++i]];
-      char b = tbl[(unsigned char) s[++i]];
+      char a = HEX_LOOKUP[(unsigned char) s[++i]];
+      char b = HEX_LOOKUP[(unsigned char) s[++i]];
       if (a < 0 || b < 0)
         goto err;
       c = (char) ((a << 4) | b);

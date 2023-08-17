@@ -3,11 +3,11 @@
 #include "tmpfile.h"
 #include "webb/webb.h"
 
-static TmpFile file;
+static TmpFile TMPFILE;
 
 TEST(test_http_conn_next) {
   // TODO: Add some tests?
-  (void) file;
+  (void) TMPFILE;
   ASSERT(1 == 1);
 }
 

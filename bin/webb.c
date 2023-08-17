@@ -12,7 +12,7 @@
 #define DEFAULT_PORT "8080"
 
 const char *mime_type(const char *path) {
-  static const char *MIME_TYPES[][2] = {
+  static const char *const MIME_TYPES[][2] = {
     {".css", "text/css"},
     {".gif", "image/gif"},
     {".htm", "text/html"},
@@ -35,7 +35,7 @@ const char *mime_type(const char *path) {
   return "text/raw";
 }
 
-char dir[PATH_MAX];
+char WORK_DIR[PATH_MAX];
 
 int handle_dir(WebbResponse *res, const char *path, const char *uri) {
   DIR *dp = opendir(path);
@@ -76,7 +76,7 @@ int http_handler(const WebbRequest *req, WebbResponse *res) {
     return 404;
 
   char file[PATH_MAX];
-  if (snprintf(file, PATH_MAX, "%s%s", dir, req->uri) < 0)
+  if (snprintf(file, PATH_MAX, "%s%s", WORK_DIR, req->uri) < 0)
     return 404;
 
   struct stat sb;
@@ -146,18 +146,18 @@ int main(int argc, char *argv[]) {
     return print_usage(argv[0], 1);
   }
   if (optind + 1 == argc) {
-    if (!realpath(argv[optind], dir)) {
+    if (!realpath(argv[optind], WORK_DIR)) {
       perror("realpath");
       return 1;
     }
-  } else if (!getcwd(dir, sizeof(dir))) {
+  } else if (!getcwd(WORK_DIR, sizeof(WORK_DIR))) {
     perror("getcwd");
     return 1;
   }
 
-  size_t dirlen = strlen(dir);
-  if (dir[dirlen - 1] == '/')
-    dir[dirlen - 1] = '\0';
+  size_t dirlen = strlen(WORK_DIR);
+  if (WORK_DIR[dirlen - 1] == '/')
+    WORK_DIR[dirlen - 1] = '\0';
 
   (void) printf("Server listening on port %s...\n", port);
   return webb_server_run(port, http_handler);
