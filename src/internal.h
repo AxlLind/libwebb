@@ -26,6 +26,7 @@ typedef enum HttpParseStep {
 typedef struct HttpParseState {
   HttpParseStep step;
   size_t headers;
+  size_t body_read;
   size_t read;
   size_t i;
   char buf[4096];

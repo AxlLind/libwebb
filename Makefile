@@ -53,7 +53,7 @@ lint:
 clean:
 	rm -rf out
 
-#@ Print help text
+#@ Display help information
 help:
 	@echo 'usage: make [TARGET..]'
 	@echo 'Makefile used to build and lint libwebb'

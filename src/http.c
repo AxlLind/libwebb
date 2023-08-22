@@ -169,6 +169,7 @@ WebbResult http_parse_step(HttpParseState *state, WebbRequest *req) {
 void http_state_reset(HttpParseState *state) {
   state->step = PARSE_STEP_INIT;
   state->headers = 0;
+  state->body_read = 0;
 }
 
 static void free_headers(WebbHeaders *header, int allocated_keys) {
