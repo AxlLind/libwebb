@@ -81,6 +81,7 @@ TEST(test_sending_minimal_request) {
   EXPECT(strstr(res, "x-libwebb-test: cool value\r\n"));
   EXPECT(strstr(res, "server: libwebb 0.1\r\n"));
   EXPECT(strstr(res, "connection: keep-alive\r\n"));
+  EXPECT(strstr(res, "content-length: 0\r\n"));
   EXPECT(strstr(res, "date: "));
 
   EXPECT(close(fd) != -1);
@@ -105,6 +106,7 @@ TEST(test_multiple_requests_per_connection) {
     EXPECT(strstr(res, "x-libwebb-test: cool value\r\n"));
     EXPECT(strstr(res, "server: libwebb 0.1\r\n"));
     EXPECT(strstr(res, "connection: keep-alive\r\n"));
+    EXPECT(strstr(res, "content-length: 0\r\n"));
     EXPECT(strstr(res, "date: "));
   }
 
