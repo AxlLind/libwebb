@@ -12,4 +12,4 @@ jobs:
       - name: Tests
         run: make test
       - name: Example in readme corresponds to example
-        run: [[ "$(cat README.md)" = *"$(cat bin/readme-example.c)"* ]]
+        run: '[[ "$(cat README.md)" = *"$(cat bin/readme-example.c)"* ]]'
