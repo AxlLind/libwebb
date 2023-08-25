@@ -5,6 +5,7 @@
 The basic usage of the library is as follows:
 
 ```C
+#include <string.h>
 #include "webb/webb.h"
 
 int http_handler(const WebbRequest *req, WebbResponse *res) {
@@ -19,6 +20,7 @@ int http_handler(const WebbRequest *req, WebbResponse *res) {
 }
 
 int main(void) {
+  // do some setup...
   return webb_server_run("8080", http_handler);
 }
 ```
