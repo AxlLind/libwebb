@@ -16,7 +16,7 @@
 
 typedef struct ThreadPayload {
   pthread_t tid;
-  EPollEventHandle ev_handle;
+  EPollEventLoop ev;
   WebbHandler *handler_fn;
 } ThreadPayload;
 
@@ -62,7 +62,7 @@ static int open_server_socket(const char *port) {
     perror("failed to bind to an ip");
     return -1;
   }
-  if (listen(sockfd, 10) == -1) {
+  if (listen(sockfd, 16) == -1) {
     perror("listen");
     return -1;
   }
@@ -163,7 +163,7 @@ WebbResult parse_request(int fd, HttpParseState *s, WebbRequest *req) {
 static void *worker_thread(void *arg) {
   ThreadPayload *payload = arg;
   Event event;
-  while (ev_next(&payload->ev_handle, &event) == 0) {
+  while (ev_next(&payload->ev, &event) == 0) {
     Connection *conn = event.data;
     switch (event.kind) {
     case EVENT_READ:
@@ -206,39 +206,34 @@ int webb_server_run(const char *port, WebbHandler *handler_fn) {
   int sockfd = open_server_socket(port);
   if (sockfd == -1)
     return 1;
-  struct sockaddr_storage addr;
-  socklen_t addrsize = sizeof(addr);
 
-  EPollEventLoop ev = {0};
-  if (ev_create(&ev) != 0)
-    goto err;
-
-  ThreadPayload payload;
-  payload.handler_fn = handler_fn;
-  if (ev_get_handle(&ev, &payload.ev_handle) != 0)
-    return 1;
-  if (pthread_create(&payload.tid, NULL, worker_thread, &payload) != 0) {
-    perror("pthread_create");
-    goto err;
-  }
-
-  // NOLINTNEXTLINE(clang-analyzer-unix.Malloc), does not see that conn is freed by worker threads
-  while (1) {
-    int fd = accept(sockfd, (struct sockaddr *) &addr, &addrsize);
-    if (fd == -1) {
-      perror("accept");
+  ThreadPayload payloads[8];
+  for (int i = 0; i < 8; i++) {
+    payloads[i].handler_fn = handler_fn;
+    if (ev_create(&payloads[i].ev) != 0)
+      goto err;
+    if (pthread_create(&payloads[i].tid, NULL, worker_thread, &payloads[i]) != 0) {
+      perror("pthread_create");
       goto err;
     }
+  }
 
+  struct sockaddr_storage addr;
+  socklen_t addrsize = sizeof(addr);
+  for (size_t tid = 0; 1; tid = (tid + 1) % 8) {
     Connection *conn = calloc(1, sizeof(Connection));
     if (!conn) {
       (void) fprintf(stderr, "failed to allocate new connection\n");
-      close(fd);
       goto err;
     }
-    conn->fd = fd;
-    if (ev_add(&ev, fd, conn) != 0) {
-      close(fd);
+    conn->fd = accept(sockfd, (struct sockaddr *) &addr, &addrsize);
+    if (conn->fd == -1) {
+      perror("accept");
+      free(conn);
+      goto err;
+    }
+    if (ev_add(&payloads[tid].ev, conn->fd, conn) != 0) {
+      close(conn->fd);
       free(conn);
       goto err;
     }
@@ -246,6 +241,5 @@ int webb_server_run(const char *port, WebbHandler *handler_fn) {
 
 err:
   (void) close(sockfd);
-  (void) ev_close(&ev);
   return 1;
 }

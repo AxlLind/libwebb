@@ -3,7 +3,7 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-#define EV_MAX_EVENTS 10
+#define EV_MAX_EVENTS 16
 
 typedef enum EventKind {
   EVENT_READ,
@@ -18,26 +18,17 @@ typedef struct Event {
 
 typedef struct EPollEventLoop {
   int epfd;
-} EPollEventLoop;
-
-typedef struct EPollEventHandle {
-  int epfd;
   int index;
   struct epoll_event events[EV_MAX_EVENTS];
-} EPollEventHandle;
+} EPollEventLoop;
 
 int ev_create(EPollEventLoop *ev) {
-  ev->epfd = epoll_create(1);
+  ev->index = -1;
+  ev->epfd = epoll_create(1 << 20);
   if (ev->epfd == -1) {
     perror("epoll_create");
     return 1;
   }
-  return 0;
-}
-
-int ev_get_handle(EPollEventLoop *ev, EPollEventHandle *handle) {
-  handle->epfd = ev->epfd;
-  handle->index = -1;
   return 0;
 }
 
@@ -46,7 +37,10 @@ int ev_add(EPollEventLoop *ev, int fd, void *data) {
     perror("fcntl(O_NONBLOCK)");
     return 1;
   }
-  struct epoll_event e = {.events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP, .data = {.ptr = data}};
+  struct epoll_event e = {
+    .events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP,
+    .data = {.ptr = data},
+  };
   if (epoll_ctl(ev->epfd, EPOLL_CTL_ADD, fd, &e) == -1) {
     perror("epoll_ctl(add)");
     return 1;
@@ -62,7 +56,7 @@ static EventKind epoll_events_to_enum(uint32_t events) {
   return EVENT_READ;
 }
 
-int ev_next(EPollEventHandle *h, Event *e) {
+int ev_next(EPollEventLoop *h, Event *e) {
   if (h->index < 0) {
     int n = epoll_wait(h->epfd, h->events, EV_MAX_EVENTS, -1);
     if (n == -1) {
