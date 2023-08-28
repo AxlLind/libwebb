@@ -112,7 +112,8 @@ WebbResult parse_request(int fd, HttpParseState *s, WebbRequest *req) {
   while (s->step != PARSE_STEP_COMPLETE) {
     WebbResult res = http_parse_step(s, req);
     switch (res) {
-    case RESULT_OK: break;
+    case RESULT_OK:
+      break;
     case RESULT_NEED_DATA:
       memmove(s->buf, s->buf + s->i, s->read - s->i);
       s->read -= s->i;
@@ -128,7 +129,8 @@ WebbResult parse_request(int fd, HttpParseState *s, WebbRequest *req) {
         return RESULT_DISCONNECTED;
       s->read += nread;
       break;
-    default: return res;
+    default:
+      return res;
     }
   }
 
@@ -182,16 +184,21 @@ static void *worker_thread(void *arg) {
         http_state_reset(&conn->state);
         break;
       }
-      case RESULT_NEED_DATA: continue;
+      case RESULT_NEED_DATA:
+        continue;
       case RESULT_DISCONNECTED:
         if (close(conn->fd) == -1)
           perror("close");
         free(conn);
         break;
-      default: (void) fprintf(stderr, "unexpected error\n"); break;
+      default:
+        (void) fprintf(stderr, "unexpected error\n");
+        break;
       }
       break;
-    case EVENT_WRITE: (void) fprintf(stderr, "TODO: should not get here\n"); exit(1);
+    case EVENT_WRITE:
+      (void) fprintf(stderr, "TODO: should not get here\n");
+      exit(1);
     case EVENT_CLOSE:
       if (close(conn->fd) == -1)
         perror("close");

@@ -161,7 +161,8 @@ WebbResult http_parse_step(HttpParseState *state, WebbRequest *req) {
       state->step = PARSE_STEP_COMPLETE;
       break;
     }
-    case PARSE_STEP_COMPLETE: return RESULT_OK;
+    case PARSE_STEP_COMPLETE:
+      return RESULT_OK;
     }
   }
 }
@@ -212,21 +213,24 @@ void webb_set_header(WebbResponse *res, char *key, char *val) {
 }
 
 const char *webb_method_str(WebbMethod m) {
+  // clang-format off
   switch (m) {
   case WEBB_CONNECT: return "CONNECT";
-  case WEBB_DELETE: return "DELETE";
-  case WEBB_GET: return "GET";
-  case WEBB_HEAD: return "HEAD";
+  case WEBB_DELETE:  return "DELETE";
+  case WEBB_GET:     return "GET";
+  case WEBB_HEAD:    return "HEAD";
   case WEBB_OPTIONS: return "OPTIONS";
-  case WEBB_PATCH: return "PATCH";
-  case WEBB_POST: return "POST";
-  case WEBB_PUT: return "PUT";
-  case WEBB_TRACE: return "TRACE";
-  default: return "INVALID";
+  case WEBB_PATCH:   return "PATCH";
+  case WEBB_POST:    return "POST";
+  case WEBB_PUT:     return "PUT";
+  case WEBB_TRACE:   return "TRACE";
+  default:           return "INVALID";
   }
+  // clang-format off
 }
 
 const char *webb_status_str(int status) {
+  // clang-format off
   switch (status) {
   case 100: return "Continue";
   case 101: return "Switching protocols";
@@ -293,4 +297,5 @@ const char *webb_status_str(int status) {
   case 511: return "Network Authentication Required";
   default: return NULL;
   }
+  // clang-format on
 }

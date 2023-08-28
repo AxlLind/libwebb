@@ -136,9 +136,13 @@ int main(int argc, char *argv[]) {
   char *port = DEFAULT_PORT;
   while ((opt = getopt(argc, argv, "p:h")) != -1) {
     switch (opt) {
-    case 'p': port = optarg; break;
-    case 'h': return print_usage(argv[0], 0);
-    default: return print_usage(argv[0], 1);
+    case 'p':
+      port = optarg;
+      break;
+    case 'h':
+      return print_usage(argv[0], 0);
+    default:
+      return print_usage(argv[0], 1);
     }
   }
   if (optind + 1 < argc) {
