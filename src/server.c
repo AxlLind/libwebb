@@ -74,7 +74,7 @@ static int send_all(int fd, const char *buf, size_t len) {
     sent = send(fd, buf, len, 0);
     if (sent == -1) {
       if (errno == EWOULDBLOCK) {
-        printf("writing would block!\n");
+        LOG("writing would block!");
         continue;
       }
       perror("send");
@@ -174,11 +174,11 @@ static void *worker_thread(void *arg) {
         WebbResponse res = {0};
         res.status = payload->handler_fn(&conn->req, &res);
         if (res.status < 0) {
-          (void) fprintf(stderr, "handler function failed\n");
+          LOG("handler function failed");
           res.status = 500;
         }
         if (send_response(conn->fd, &res) != 0)
-          (void) fprintf(stderr, "failed to send data\n");
+          LOG("failed to send data");
         http_res_free(&res);
         http_req_free(&conn->req);
         http_state_reset(&conn->state);
@@ -192,12 +192,12 @@ static void *worker_thread(void *arg) {
         free(conn);
         break;
       default:
-        (void) fprintf(stderr, "unexpected error\n");
+        LOG("unexpected error");
         break;
       }
       break;
     case EVENT_WRITE:
-      (void) fprintf(stderr, "TODO: should not get here\n");
+      LOG("TODO: should not get here");
       exit(1);
     case EVENT_CLOSE:
       if (close(conn->fd) == -1)
@@ -205,7 +205,7 @@ static void *worker_thread(void *arg) {
       free(conn);
     }
   }
-  (void) fprintf(stderr, "fatal error in worker thread!\n");
+  LOG("fatal error in worker thread!");
   return NULL;
 }
 
@@ -230,7 +230,7 @@ int webb_server_run(const char *port, WebbHandler *handler_fn) {
   for (size_t tid = 0; 1; tid = (tid + 1) % 8) {
     Connection *conn = calloc(1, sizeof(Connection));
     if (!conn) {
-      (void) fprintf(stderr, "failed to allocate new connection\n");
+      LOG("failed to allocate new connection");
       goto err;
     }
     conn->fd = accept(sockfd, (struct sockaddr *) &addr, &addrsize);

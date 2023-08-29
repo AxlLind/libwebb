@@ -2,7 +2,10 @@
 #define WEBB_INTERNAL_H
 
 #include <stddef.h>
+#include <stdio.h>
 #include "webb/webb.h"
+
+#define LOG(msg, ...) (void) fprintf(stderr, msg "\n" __VA_OPT__(, ) __VA_ARGS__)
 
 #define MAX_HEADERS  64
 #define MAX_BODY_LEN (2 * 1024 * 1024)  // 2mb
