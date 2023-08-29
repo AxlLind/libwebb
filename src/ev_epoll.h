@@ -1,7 +1,7 @@
 #include <fcntl.h>
-#include <stdio.h>
 #include <sys/epoll.h>
 #include <unistd.h>
+#include "internal.h"
 
 #define EV_MAX_EVENTS 16
 
@@ -26,7 +26,7 @@ int ev_create(EPollEventLoop *ev) {
   ev->index = -1;
   ev->epfd = epoll_create(1 << 20);
   if (ev->epfd == -1) {
-    perror("epoll_create");
+    LOG_ERRNO("epoll_create");
     return 1;
   }
   return 0;
@@ -34,7 +34,7 @@ int ev_create(EPollEventLoop *ev) {
 
 int ev_add(EPollEventLoop *ev, int fd, void *data) {
   if (fcntl(fd, F_SETFD, O_NONBLOCK) == -1) {
-    perror("fcntl(O_NONBLOCK)");
+    LOG_ERRNO("fcntl(O_NONBLOCK)");
     return 1;
   }
   struct epoll_event e = {
@@ -42,7 +42,7 @@ int ev_add(EPollEventLoop *ev, int fd, void *data) {
     .data = {.ptr = data},
   };
   if (epoll_ctl(ev->epfd, EPOLL_CTL_ADD, fd, &e) == -1) {
-    perror("epoll_ctl(add)");
+    LOG_ERRNO("epoll_ctl(add)");
     return 1;
   }
   return 0;
@@ -60,7 +60,7 @@ int ev_next(EPollEventLoop *h, Event *e) {
   if (h->index < 0) {
     int n = epoll_wait(h->epfd, h->events, EV_MAX_EVENTS, -1);
     if (n == -1) {
-      perror("epoll_wait");
+      LOG_ERRNO("epoll_wait");
       return -1;
     }
     h->index = n - 1;

@@ -1,11 +1,14 @@
 #ifndef WEBB_INTERNAL_H
 #define WEBB_INTERNAL_H
 
+#include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 #include "webb/webb.h"
 
-#define LOG(msg, ...) (void) fprintf(stderr, msg "\n" __VA_OPT__(, ) __VA_ARGS__)
+#define LOG(msg, ...)  (void) fprintf(stderr, "libwebb - " msg "\n" __VA_OPT__(, ) __VA_ARGS__)
+#define LOG_ERRNO(msg) LOG(msg ": %s", strerror(errno))
 
 #define MAX_HEADERS  64
 #define MAX_BODY_LEN (2 * 1024 * 1024)  // 2mb

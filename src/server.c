@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <pthread.h>
@@ -35,7 +34,7 @@ static int open_server_socket(const char *port) {
   };
 
   if (getaddrinfo(NULL, port, &hints, &servinfo) != 0) {
-    perror("getaddrinfo");
+    LOG_ERRNO("getaddrinfo");
     return -1;
   }
 
@@ -46,7 +45,7 @@ static int open_server_socket(const char *port) {
       continue;
     int yes = 1;
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
-      perror("setsockopt");
+      LOG_ERRNO("setsockopt");
       return -1;
     }
     if (bind(fd, info->ai_addr, info->ai_addrlen) == -1) {
@@ -59,11 +58,11 @@ static int open_server_socket(const char *port) {
   freeaddrinfo(servinfo);
 
   if (sockfd == -1) {
-    perror("failed to bind to an ip");
+    LOG_ERRNO("failed to bind to an ip");
     return -1;
   }
   if (listen(sockfd, 16) == -1) {
-    perror("listen");
+    LOG_ERRNO("listen");
     return -1;
   }
   return sockfd;
@@ -77,7 +76,7 @@ static int send_all(int fd, const char *buf, size_t len) {
         LOG("writing would block!");
         continue;
       }
-      perror("send");
+      LOG_ERRNO("send");
       return 1;
     }
   }
@@ -122,7 +121,7 @@ WebbResult parse_request(int fd, HttpParseState *s, WebbRequest *req) {
       if (nread == -1) {
         if (errno == EWOULDBLOCK)
           return RESULT_NEED_DATA;
-        perror("read");
+        LOG_ERRNO("read");
         return RESULT_UNEXPECTED;
       }
       if (nread == 0)
@@ -153,7 +152,7 @@ WebbResult parse_request(int fd, HttpParseState *s, WebbRequest *req) {
     if (nread == -1) {
       if (errno == EWOULDBLOCK)
         return RESULT_NEED_DATA;
-      perror("read");
+      LOG_ERRNO("read");
       return RESULT_UNEXPECTED;
     }
     if (nread == 0)
@@ -188,7 +187,7 @@ static void *worker_thread(void *arg) {
         continue;
       case RESULT_DISCONNECTED:
         if (close(conn->fd) == -1)
-          perror("close");
+          LOG_ERRNO("close");
         free(conn);
         break;
       default:
@@ -201,7 +200,7 @@ static void *worker_thread(void *arg) {
       exit(1);
     case EVENT_CLOSE:
       if (close(conn->fd) == -1)
-        perror("close");
+        LOG_ERRNO("close");
       free(conn);
     }
   }
@@ -220,7 +219,7 @@ int webb_server_run(const char *port, WebbHandler *handler_fn) {
     if (ev_create(&payloads[i].ev) != 0)
       goto err;
     if (pthread_create(&payloads[i].tid, NULL, worker_thread, &payloads[i]) != 0) {
-      perror("pthread_create");
+      LOG_ERRNO("pthread_create");
       goto err;
     }
   }
@@ -235,7 +234,7 @@ int webb_server_run(const char *port, WebbHandler *handler_fn) {
     }
     conn->fd = accept(sockfd, (struct sockaddr *) &addr, &addrsize);
     if (conn->fd == -1) {
-      perror("accept");
+      LOG_ERRNO("accept");
       free(conn);
       goto err;
     }
