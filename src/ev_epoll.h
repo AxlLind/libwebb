@@ -70,11 +70,3 @@ int ev_next(EPollEventLoop *h, Event *e) {
   h->index -= 1;
   return 0;
 }
-
-int ev_close(EPollEventLoop *ev) {
-  if (close(ev->epfd) == -1) {
-    perror("ev_close");
-    return 1;
-  }
-  return 0;
-}
