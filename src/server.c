@@ -83,7 +83,31 @@ static int send_all(int fd, const char *buf, size_t len) {
   return 0;
 }
 
-static int send_response(int connfd, const WebbResponse *res) {
+static int send_body(int fd, const WebbBody *body) {
+  switch (body->type) {
+  case WEBB_BODY_NULL:
+    return 0;
+  case WEBB_BODY_ALLOCATED:  // fallthrough
+  case WEBB_BODY_STATIC:
+    return send_all(fd, body->body.buf, body->len);
+  case WEBB_BODY_FD: {
+    char buf[65536];
+    for (size_t left = body->len; left;) {
+      ssize_t nread = read(body->body.fd, buf, sizeof(buf) < left ? sizeof(buf) : left);
+      if (nread < 1)
+        return 1;
+      if (send_all(fd, buf, (size_t) nread) != 0)
+        return 1;
+      left -= nread;
+    }
+    return 0;
+  }
+  default:
+    return 1;
+  }
+}
+
+static int send_response(int fd, const WebbResponse *res) {
   char buf[65536], *bufptr = buf;
   const char *status_str = webb_status_str(res->status);
   if (!status_str)
@@ -97,13 +121,57 @@ static int send_response(int connfd, const WebbResponse *res) {
   bufptr += strftime(bufptr, buf + sizeof(buf) - bufptr, "date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm);
   bufptr += sprintf(bufptr, "server: libwebb 0.1\r\n");
   bufptr += sprintf(bufptr, "connection: keep-alive\r\n");
-  bufptr += sprintf(bufptr, "content-length: %zu\r\n", res->body_len);
+  bufptr += sprintf(bufptr, "content-length: %zu\r\n", res->body.len);
   bufptr += sprintf(bufptr, "\r\n");
-  if (send_all(connfd, buf, bufptr - buf))
+  if (send_all(fd, buf, bufptr - buf))
     return 1;
-  if (res->body && send_all(connfd, res->body, res->body_len))
+  if (send_body(fd, &res->body) != 0)
     return 1;
   return 0;
+}
+
+void webb_set_body(WebbResponse *res, char *body, size_t len) {
+  res->body = (WebbBody){.type = WEBB_BODY_ALLOCATED, .len = len, .body = {.buf = body}};
+}
+
+void webb_set_body_static(WebbResponse *res, char *body, size_t len) {
+  res->body = (WebbBody){.type = WEBB_BODY_STATIC, .len = len, .body = {.buf = body}};
+}
+
+void webb_set_body_fd(WebbResponse *res, int fd, size_t len) {
+  res->body = (WebbBody){.type = WEBB_BODY_FD, .len = len, .body = {.fd = fd}};
+}
+
+static void free_headers(WebbHeaders *header, int allocated_keys) {
+  while (header) {
+    WebbHeaders *next = header->next;
+    if (allocated_keys)
+      free(header->key);
+    free(header->val);
+    free(header);
+    header = next;
+  }
+}
+
+void http_req_free(WebbRequest *req) {
+  free_headers(req->headers, 1);
+  free(req->uri);
+  free(req->query);
+  free(req->body);
+}
+
+void http_res_free(WebbResponse *res) {
+  free_headers(res->headers, 0);
+  switch (res->body.type) {
+  case WEBB_BODY_NULL:
+    break;
+  case WEBB_BODY_ALLOCATED:
+    free(res->body.body.buf);
+  case WEBB_BODY_STATIC:
+    break;
+  case WEBB_BODY_FD:
+    (void) close(res->body.body.fd);
+  }
 }
 
 WebbResult parse_request(int fd, HttpParseState *s, WebbRequest *req) {

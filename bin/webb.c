@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <fcntl.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,8 +65,7 @@ int handle_dir(WebbResponse *res, const char *path, const char *uri) {
   closedir(dp);
 
   s += sprintf(s, "</ul>\n</body>\n</html>\n");
-  res->body_len = s - html;
-  res->body = html;
+  webb_set_body(res, html, s - html);
   return 200;
 }
 
@@ -82,37 +82,17 @@ int http_handler(const WebbRequest *req, WebbResponse *res) {
   struct stat sb;
   if (stat(file, &sb) == -1)
     return 404;
-
   if (S_ISDIR(sb.st_mode))
     return handle_dir(res, file, req->uri);
-
   if (!S_ISREG(sb.st_mode))
     return 404;
 
-  FILE *f = fopen(file, "rb");
-  if (!f) {
-    perror(req->uri);
-    return -1;
+  int fd = open(file, O_RDONLY);
+  if (fd == -1) {
+    perror("open");
+    return 500;
   }
-  if (fseek(f, 0, SEEK_END) != 0) {
-    perror("fseek");
-    return -1;
-  }
-  res->body_len = ftell(f);
-  rewind(f);
-
-  res->body = malloc(res->body_len + 1);
-  if (!res->body)
-    return -1;
-  if (fread(res->body, res->body_len, 1, f) != 1) {
-    perror("fread");
-    return -1;
-  }
-  if (fclose(f) != 0) {
-    perror("fclose");
-    return -1;
-  }
-
+  webb_set_body_fd(res, fd, sb.st_size);
   webb_set_header(res, "content-type", strdup(mime_type(file)));
   return 200;
 }

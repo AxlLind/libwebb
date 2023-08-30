@@ -173,29 +173,6 @@ void http_state_reset(HttpParseState *state) {
   state->body_read = 0;
 }
 
-static void free_headers(WebbHeaders *header, int allocated_keys) {
-  while (header) {
-    WebbHeaders *next = header->next;
-    if (allocated_keys)
-      free(header->key);
-    free(header->val);
-    free(header);
-    header = next;
-  }
-}
-
-void http_req_free(WebbRequest *req) {
-  free_headers(req->headers, 1);
-  free(req->uri);
-  free(req->query);
-  free(req->body);
-}
-
-void http_res_free(WebbResponse *res) {
-  free_headers(res->headers, 0);
-  free(res->body);
-}
-
 const char *webb_get_header(const WebbRequest *req, const char *key) {
   for (WebbHeaders *h = req->headers; h; h = h->next) {
     if (strcasecmp(key, h->key) == 0)

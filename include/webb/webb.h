@@ -47,16 +47,35 @@ typedef struct WebbRequest {
   size_t body_len;
 } WebbRequest;
 
+/** @brief The type of the response body. */
+typedef enum WebbBodyType {
+  WEBB_BODY_NULL = 0,
+  WEBB_BODY_ALLOCATED,
+  WEBB_BODY_STATIC,
+  WEBB_BODY_FD,
+} WebbBodyType;
+
+typedef struct WebbBody {
+  /** @brief The length of the HTTP response body. */
+  size_t len;
+  /** @brief The body type. */
+  WebbBodyType type;
+  union {
+    /** @brief The HTTP body buffer. */
+    char *buf;
+    /** @brief The HTTP body file descriptor. */
+    int fd;
+  } body;
+} WebbBody;
+
 /** @brief A Webb HTTP response. */
 typedef struct WebbResponse {
   /** @brief HTTP status response code (e.g 200 for OK). */
   int status;
   /** @brief HTTP headers of the response. */
   WebbHeaders *headers;
-  /** @brief The HTTP body (may be NULL). */
-  char *body;
-  /** @brief The length of the HTTP response body. */
-  size_t body_len;
+  /** @brief HTTP body to send */
+  WebbBody body;
 } WebbResponse;
 
 /**
@@ -97,6 +116,32 @@ const char *webb_get_header(const WebbRequest *req, const char *key);
  * @param val The header value. Has to be an allocated string (will be freed).
  */
 void webb_set_header(WebbResponse *res, char *key, char *val);
+
+/**
+ * @brief Set the body of the response. Body will be freed.
+ *
+ * @param res The HTTP response.
+ * @param body The body to send. Has to be allocated.
+ * @param len The length of the body.
+ */
+void webb_set_body(WebbResponse *res, char *body, size_t len);
+
+/**
+ * @brief Set the body of the response as a static string. Body will NOT be freed.
+ *
+ * @param res The HTTP response.
+ * @param body The body to send.
+ * @param len The length of the body.
+ */
+void webb_set_body_static(WebbResponse *res, char *body, size_t len);
+
+/**
+ * @brief Set the body of the response as a file descriptor to send. E.g an opened file.
+ *
+ * @param res The HTTP response.
+ * @param fd The file descriptor to read from.
+ */
+void webb_set_body_fd(WebbResponse *res, int fd, size_t len);
 
 /**
  * @brief Convert an HTTP method to it's string representation (e.g HTTP_GET -> "GET").

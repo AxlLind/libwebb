@@ -9,10 +9,11 @@ Checks: >
   performance-*,
   readability-*,
   -bugprone-easily-swappable-parameters,
+  -readability-function-cognitive-complexity,
   -readability-identifier-length,
   -readability-isolate-declaration,
   -readability-magic-numbers,
-  -readability-function-cognitive-complexity,
+  -readability-non-const-parameter,
 CheckOptions:
   - key: readability-braces-around-statements.ShortStatementLines
     value: 2
