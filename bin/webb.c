@@ -70,7 +70,7 @@ int handle_dir(WebbResponse *res, const char *path, const char *uri) {
 }
 
 int http_handler(const WebbRequest *req, WebbResponse *res) {
-  (void) printf("Request: %s %s %s\n", webb_method_str(req->method), req->uri, req->query ? req->query : "");
+  printf("Request: %s %s %s\n", webb_method_str(req->method), req->uri, req->query ? req->query : "");
 
   if (req->method != WEBB_GET)
     return 404;
@@ -98,15 +98,14 @@ int http_handler(const WebbRequest *req, WebbResponse *res) {
 }
 
 int print_usage(const char *program, int error) {
-  FILE *out = error ? stderr : stdout;
-  (void) fprintf(out, "usage: %s [-h] [-p PORT] [DIR]\n", program);
+  printf("usage: %s [-h] [-p PORT] [DIR]\n", program);
   if (!error) {
-    (void) fprintf(out, "webb - A small http server written in C using libwebb\n");
-    (void) fprintf(out, "\n");
-    (void) fprintf(out, "args:\n");
-    (void) fprintf(out, "  DIR      Directory to run web server from, defaults to cwd\n");
-    (void) fprintf(out, "  -p PORT  Port to listen on, default " DEFAULT_PORT "\n");
-    (void) fprintf(out, "  -h       Show this help text\n");
+    printf("webb - A small http server written in C using libwebb\n");
+    printf("\n");
+    printf("args:\n");
+    printf("  DIR      Directory to run web server from, defaults to cwd\n");
+    printf("  -p PORT  Port to listen on, default " DEFAULT_PORT "\n");
+    printf("  -h       Show this help text\n");
   }
   return error;
 }
@@ -126,7 +125,7 @@ int main(int argc, char *argv[]) {
     }
   }
   if (optind + 1 < argc) {
-    (void) fprintf(stderr, "Unexpected extra positional arguments.\n");
+    printf("Unexpected extra positional arguments.\n");
     return print_usage(argv[0], 1);
   }
   if (optind + 1 == argc) {
@@ -143,6 +142,6 @@ int main(int argc, char *argv[]) {
   if (WORK_DIR[dirlen - 1] == '/')
     WORK_DIR[dirlen - 1] = '\0';
 
-  (void) printf("Server listening on port %s...\n", port);
+  printf("Server listening on port %s...\n", port);
   return webb_server_run(port, http_handler);
 }
