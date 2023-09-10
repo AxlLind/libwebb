@@ -113,15 +113,14 @@ static int send_response(int fd, const WebbResponse *res) {
   if (!status_str)
     return 1;
   bufptr += sprintf(bufptr, "HTTP/1.1 %d %s\r\n", res->status, status_str);
-  for (WebbHeaders *h = res->headers; h; h = h->next)
-    bufptr += sprintf(bufptr, "%s: %s\r\n", h->key, h->val);
-
   time_t now = time(0);
   struct tm *tm = gmtime(&now);
   bufptr += strftime(bufptr, buf + sizeof(buf) - bufptr, "date: %a, %d %b %Y %H:%M:%S %Z\r\n", tm);
   bufptr += sprintf(bufptr, "server: libwebb 0.1\r\n");
   bufptr += sprintf(bufptr, "connection: keep-alive\r\n");
   bufptr += sprintf(bufptr, "content-length: %zu\r\n", res->body.len);
+  for (WebbHeaders *h = res->headers; h; h = h->next)
+    bufptr += sprintf(bufptr, "%s: %s\r\n", h->key, h->val);
   bufptr += sprintf(bufptr, "\r\n");
   if (send_all(fd, buf, bufptr - buf))
     return 1;
