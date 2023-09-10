@@ -70,9 +70,7 @@ int handle_dir(WebbResponse *res, const char *path, const char *uri) {
   return 200;
 }
 
-int http_handler(const WebbRequest *req, WebbResponse *res) {
-  printf("Request: %s %s %s\n", webb_method_str(req->method), req->uri, req->query ? req->query : "");
-
+int handle_request(const WebbRequest *req, WebbResponse *res) {
   if (req->method != WEBB_GET)
     return 404;
 
@@ -101,6 +99,18 @@ int http_handler(const WebbRequest *req, WebbResponse *res) {
   webb_set_body_fd(res, fd, sb.st_size);
   webb_set_header(res, "content-type", strdup(mime_type(file)));
   return 200;
+}
+
+int http_handler(const WebbRequest *req, WebbResponse *res) {
+  int status = handle_request(req, res);
+  printf(
+    "%s %s%s%s %d\n",
+    webb_method_str(req->method),
+    req->uri,
+    req->query ? "?" : "",
+    req->query ? req->query : "",
+    status);
+  return status;
 }
 
 int print_usage(const char *program, int error) {
