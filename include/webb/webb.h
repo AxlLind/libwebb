@@ -55,6 +55,7 @@ typedef enum WebbBodyType {
   WEBB_BODY_FD,
 } WebbBodyType;
 
+/** @brief A Webb response body. */
 typedef struct WebbBody {
   /** @brief The length of the HTTP response body. */
   size_t len;
@@ -80,6 +81,7 @@ typedef struct WebbResponse {
 
 /**
  * @brief A Webb HTTP handler function. Accepts an incoming request and returns a response.
+ *        Note that this function has to be thread-safe.
  *
  * @param req The HTTP request object.
  * @param res The HTTP response object, mutated by the function.
