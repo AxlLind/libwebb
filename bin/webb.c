@@ -66,6 +66,7 @@ int handle_dir(WebbResponse *res, const char *path, const char *uri) {
 
   s += sprintf(s, "</ul>\n</body>\n</html>\n");
   webb_set_body(res, html, s - html);
+  webb_set_header(res, "content-type", strdup("text/html"));
   return 200;
 }
 
