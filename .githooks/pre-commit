@@ -1,4 +1,5 @@
 #!/bin/bash
 set -euo pipefail
 
+make build -j
 make fmt-check lint test
