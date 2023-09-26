@@ -203,7 +203,7 @@ const char *webb_method_str(WebbMethod m) {
   case WEBB_TRACE:   return "TRACE";
   default:           return "INVALID";
   }
-  // clang-format off
+  // clang-format on
 }
 
 const char *webb_status_str(int status) {
