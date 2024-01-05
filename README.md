@@ -35,3 +35,6 @@ cp out/libwebb.a $DIR # copy the lib to your destination
 # compile against the library and include the header path
 gcc ... $DIR/libwebb.a -I$LIBWEBB_DIR/include
 ```
+
+## Development
+`libwebb` uses `make` as it's build system. The makefile is self-documenting. Simply type `make` to get help about available commands to use to build, lint, and test during development.
