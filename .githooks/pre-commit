@@ -2,4 +2,6 @@
 set -euo pipefail
 
 make build -j
-make fmt-check lint test
+make fmt-check
+make lint -j
+make test

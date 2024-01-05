@@ -5,12 +5,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Check format
-        run: make fmt-check
       - name: Build everything
         run: make build -j
+      - name: Check format
+        run: make fmt-check
       - name: Lints
-        run: make lint
+        run: make lint -j
       - name: Tests
         run: make test
       - name: Example in readme corresponds to example

@@ -1,4 +1,4 @@
-.PHONY: build run test fmt fmt-check lint clean help
+.PHONY: build run test fmt fmt-check lint %-lint clean help
 .DEFAULT_GOAL  := help
 .EXTRA_PREREQS := $(MAKEFILE_LIST)
 
@@ -26,6 +26,9 @@ out/bin/%: bin/%.c $(LIB)
 $(LIB): $(OBJS)
 	$(AR) rc $@ $^
 
+%-lint:
+	clang-tidy $* -- -std=gnu99 -Isrc -Iinclude 2>/dev/null
+
 #@ Compile everything
 build: $(LIB) $(TESTS) $(BINS)
 
@@ -46,8 +49,7 @@ fmt-check:
 	clang-format -style=file $(FILES) --dry-run -Werror
 
 #@ Lint all source files, using clang-tidy
-lint:
-	python3 clang-tidy.py $(FILES) -- -std=gnu99 -Isrc -Iinclude
+lint: $(FILES:=-lint)
 
 #@ Remove all make artifacts
 clean:
