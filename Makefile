@@ -3,10 +3,10 @@
 .EXTRA_PREREQS := $(MAKEFILE_LIST)
 
 LIB   := out/libwebb.a
-OBJS  := $(patsubst src/%.c,out/obj/%.o,$(wildcard src/*.c))
-BINS  := $(patsubst bin/%.c,out/bin/%,$(wildcard bin/*.c))
-TESTS := $(patsubst tests/%.c,out/tests/%,$(wildcard tests/*.c))
-FILES := $(wildcard src/* tests/* bin/* include/webb/*)
+OBJS  := $(sort $(patsubst src/%.c,out/obj/%.o,$(wildcard src/*.c)))
+BINS  := $(sort $(patsubst bin/%.c,out/bin/%,$(wildcard bin/*.c)))
+TESTS := $(sort $(patsubst tests/%.c,out/tests/%,$(wildcard tests/*.c)))
+FILES := $(sort $(wildcard src/* tests/* bin/* include/webb/*))
 
 CC     := gcc
 CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -pthread
