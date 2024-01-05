@@ -43,7 +43,6 @@ typedef struct {
       (void) printf("%s - %s\n", test_failed ? "FAILED" : "PASSED", tests[i].name); \
       failed_tests += test_failed;                                                  \
     }                                                                               \
-    (void) printf("%s: %s\n", FILENAME, failed_tests ? "FAILED" : "PASSED");        \
     return failed_tests ? 1 : 0;                                                    \
   }
 
