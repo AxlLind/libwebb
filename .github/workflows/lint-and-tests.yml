@@ -5,13 +5,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Build everything
-        run: make build -j
-      - name: Check format
-        run: make fmt-check
-      - name: Lints
-        run: make lint -j
-      - name: Tests
-        run: make test
+      - run: make build -j
+      - run: make fmt-check
+      - run: make lint -j
+      - run: make test
       - name: Example in readme corresponds to example
         run: '[[ "$(cat README.md)" = *"$(cat bin/readme-example.c)"* ]]'
