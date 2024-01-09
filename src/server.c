@@ -248,7 +248,7 @@ static void *worker_thread(void *arg) {
         http_res_free(&res);
         http_req_free(&conn->req);
         http_state_reset(&conn->state);
-        break;
+        continue;
       }
       case RESULT_NEED_DATA:
         continue;
@@ -258,9 +258,7 @@ static void *worker_thread(void *arg) {
       default:
         LOG("unexpected error");
         goto close;
-        break;
       }
-      continue;
     case EVENT_CLOSE:
       goto close;
     case EVENT_WRITE:
