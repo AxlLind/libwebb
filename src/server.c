@@ -254,26 +254,26 @@ static void *worker_thread(void *arg) {
         continue;
       case RESULT_INVALID_HTTP:
       case RESULT_DISCONNECTED:
-        if (close(conn->fd) == -1)
-          LOG_ERRNO("close");
-        free(conn);
-        break;
+        goto close;
       default:
         LOG("unexpected error");
+        goto close;
         break;
       }
-      break;
-    case EVENT_WRITE:
-      LOG("TODO: should not get here");
-      exit(1);
+      continue;
     case EVENT_CLOSE:
-      if (close(conn->fd) == -1)
-        LOG_ERRNO("close");
-      free(conn);
+      goto close;
+    case EVENT_WRITE:
+      LOG("TODO: should not receive EVENT_WRITE");
+      exit(1);
     }
+  close:
+    if (close(conn->fd) == -1)
+      LOG_ERRNO("close");
+    free(conn);
   }
   LOG("fatal error in worker thread!");
-  return NULL;
+  exit(1);
 }
 
 int webb_server_run(const char *port, WebbHandler *handler_fn) {
