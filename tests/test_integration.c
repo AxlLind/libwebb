@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <netdb.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -114,4 +115,25 @@ TEST(test_multiple_requests_per_connection) {
   ASSERT(kill(pid, SIGKILL) != -1);
 }
 
-TEST_MAIN(test_sending_minimal_request, test_multiple_requests_per_connection)
+TEST(test_invalid_request_should_close_connection) {
+  pid_t pid;
+  int fd = open_webb_socket(test_handler, &pid);
+  ASSERT(fd != -1);
+  ASSERT(pid != -1);
+
+  const char *request = "Some random string\r\n\r\n";
+  EXPECT(send(fd, request, strlen(request), 0) == (ssize_t) strlen(request));
+
+  char res[4096];
+  ssize_t nread = read(fd, res, sizeof(res));
+  EXPECT(nread == 0);
+  EXPECT(errno == ECONNREFUSED);
+
+  EXPECT(close(fd) != -1);
+  ASSERT(kill(pid, SIGKILL) != -1);
+}
+
+TEST_MAIN(
+  test_sending_minimal_request,
+  test_multiple_requests_per_connection,
+  test_invalid_request_should_close_connection)

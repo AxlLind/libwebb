@@ -252,6 +252,7 @@ static void *worker_thread(void *arg) {
       }
       case RESULT_NEED_DATA:
         continue;
+      case RESULT_INVALID_HTTP:
       case RESULT_DISCONNECTED:
         if (close(conn->fd) == -1)
           LOG_ERRNO("close");
