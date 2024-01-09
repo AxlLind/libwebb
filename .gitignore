@@ -1,14 +1,8 @@
 # make out (hihi) directory
 /out
 
-# vim
+# vim swap file
 *.swp
 
 # vscode config dir
 .vscode
-
-# compiler artifacts
-*.o
-*.a
-*.so
-*.out
