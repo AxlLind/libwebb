@@ -33,11 +33,11 @@ TEST(test_parse_curl_example) {
   ASSERT(parse_request(TMPFILE.fd, &STATE, &REQ) == RESULT_OK);
 
   EXPECT(REQ.method == WEBB_GET);
-  EXPECT_EQ_STR(REQ.uri, "/test/a.txt");
-  EXPECT_EQ_STR(REQ.query, "abc=2");
-  EXPECT_EQ_STR(webb_get_header(&REQ, "host"), "localhost:8080");
-  EXPECT_EQ_STR(webb_get_header(&REQ, "user-agent"), "curl/7.77.0");
-  EXPECT_EQ_STR(webb_get_header(&REQ, "accept"), "*/*");
+  EXPECT(strcmp(REQ.uri, "/test/a.txt") == 0);
+  EXPECT(strcmp(REQ.query, "abc=2") == 0);
+  EXPECT(strcmp(webb_get_header(&REQ, "host"), "localhost:8080") == 0);
+  EXPECT(strcmp(webb_get_header(&REQ, "user-agent"), "curl/7.77.0") == 0);
+  EXPECT(strcmp(webb_get_header(&REQ, "accept"), "*/*") == 0);
   EXPECT(REQ.body == NULL);
   EXPECT(REQ.body_len == 0);
   http_req_free(&REQ);
@@ -51,7 +51,7 @@ TEST(test_parse_minimal_request) {
   ASSERT(parse_request(TMPFILE.fd, &STATE, &REQ) == RESULT_OK);
 
   EXPECT(REQ.method == WEBB_GET);
-  EXPECT_EQ_STR(REQ.uri, "/");
+  EXPECT(strcmp(REQ.uri, "/") == 0);
   EXPECT(REQ.query == NULL);
   EXPECT(REQ.headers == NULL);
   EXPECT(REQ.body == NULL);
@@ -71,10 +71,10 @@ TEST(test_parse_request_body) {
   ASSERT(parse_request(TMPFILE.fd, &STATE, &REQ) == RESULT_OK);
 
   EXPECT(REQ.method == WEBB_POST);
-  EXPECT_EQ_STR(REQ.uri, "/");
+  EXPECT(strcmp(REQ.uri, "/") == 0);
   EXPECT(REQ.query == NULL);
-  EXPECT_EQ_STR(webb_get_header(&REQ, "content-length"), "11");
-  EXPECT_EQ_STR(REQ.body, "hello world");
+  EXPECT(strcmp(webb_get_header(&REQ, "content-length"), "11") == 0);
+  EXPECT(strcmp(REQ.body, "hello world") == 0);
   EXPECT(REQ.body_len == 11);
   http_req_free(&REQ);
 }
@@ -117,7 +117,7 @@ TEST(test_multiple_requests_per_connection) {
   for (int i = 0; i < 3; i++) {
     EXPECT(parse_request(TMPFILE.fd, &STATE, &REQ) == RESULT_OK);
     EXPECT(REQ.method == WEBB_GET);
-    EXPECT_EQ_STR(REQ.uri, "/");
+    EXPECT(strcmp(REQ.uri, "/") == 0);
     EXPECT(REQ.query == NULL);
     EXPECT(REQ.headers == NULL);
     EXPECT(REQ.body == NULL);
