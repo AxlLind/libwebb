@@ -18,7 +18,7 @@ out:
 out/obj/%.o: src/%.c src/internal.h include/webb/webb.h | out
 	$(CC) $(CFLAGS) -Iinclude -o $@ $< -c
 
-out/tests/%: tests/%.c $(SLIB)
+out/tests/%: tests/%.c $(DLIB)
 	$(CC) $(CFLAGS) -Iinclude -o $@ $^ -Isrc
 
 out/bin/%: bin/%.c $(SLIB)
