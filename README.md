@@ -29,11 +29,13 @@ See [./bin/webb.c](./bin/webb.c) for a small web server using the framework.
 
 ## Compilation and installation
 ```bash
-make build            # build the library
-cp out/libwebb.a $DIR # copy the lib to your destination
+make build              # build the library
+cp out/libwebb.a  $DIR  # copy the lib to your destination
+cp out/libwebb.so $DIR  # or the dynamic library
 
 # compile against the library and include the header path
-gcc ... $DIR/libwebb.a -I$LIBWEBB_DIR/include
+gcc ... $DIR/libwebb.a  -I$LIBWEBB_DIR/include
+gcc ... $DIR/libwebb.so -I$LIBWEBB_DIR/include
 ```
 
 ## Development
