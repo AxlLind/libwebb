@@ -2,14 +2,15 @@
 .DEFAULT_GOAL  := help
 .EXTRA_PREREQS := $(MAKEFILE_LIST)
 
-LIB   := out/libwebb.a
+SLIB  := out/libwebb.a
+DLIB  := out/libwebb.so
 OBJS  := $(sort $(patsubst src/%.c,out/obj/%.o,$(wildcard src/*.c)))
 BINS  := $(sort $(patsubst bin/%.c,out/bin/%,$(wildcard bin/*.c)))
 TESTS := $(sort $(patsubst tests/%.c,out/tests/%,$(wildcard tests/*.c)))
 FILES := $(sort $(wildcard src/* tests/* bin/* include/webb/*))
 
 CC     := gcc
-CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -pthread
+CFLAGS := -std=gnu99 -pedantic -O3 -Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -pthread -fPIC
 
 out:
 	mkdir -p out/obj out/tests out/bin
@@ -17,20 +18,23 @@ out:
 out/obj/%.o: src/%.c src/internal.h include/webb/webb.h | out
 	$(CC) $(CFLAGS) -Iinclude -o $@ $< -c
 
-out/tests/%: tests/%.c $(LIB)
+out/tests/%: tests/%.c $(SLIB)
 	$(CC) $(CFLAGS) -Iinclude -o $@ $^ -Isrc
 
-out/bin/%: bin/%.c $(LIB)
+out/bin/%: bin/%.c $(SLIB)
 	$(CC) $(CFLAGS) -Iinclude -o $@ $^
 
-$(LIB): $(OBJS)
+$(SLIB): $(OBJS)
 	$(AR) rc $@ $^
+
+$(DLIB): $(OBJS)
+	$(CC) -shared $^ -o $@
 
 %-lint:
 	clang-tidy $* -- -std=gnu99 -Isrc -Iinclude 2>/dev/null
 
 #@ Compile everything
-build: $(LIB) $(TESTS) $(BINS)
+build: $(SLIB) $(DLIB) $(TESTS) $(BINS)
 
 #@ Run the web server
 run: out/bin/webb
