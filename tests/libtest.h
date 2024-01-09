@@ -7,18 +7,18 @@
 
 #define FILENAME (strrchr("/" __FILE__, '/') + 1)
 
-#define INTERNAL_ASSERT(assert, expr, msg)                                       \
-  do {                                                                           \
-    if (!(expr)) {                                                               \
-      (void) fprintf(stderr, "%s:%d - expected: %s\n", FILENAME, __LINE__, msg); \
-      *test_failed = 1;                                                          \
-      if (assert)                                                                \
-        return;                                                                  \
-    }                                                                            \
+#define INTERNAL_ASSERT(expr, assert)                              \
+  do {                                                             \
+    if (!(expr)) {                                                 \
+      printf("%s:%d - expected: %s\n", FILENAME, __LINE__, #expr); \
+      *test_failed = 1;                                            \
+      if (assert)                                                  \
+        return;                                                    \
+    }                                                              \
   } while (0)
 
-#define EXPECT(expr) INTERNAL_ASSERT(0, expr, #expr)
-#define ASSERT(expr) INTERNAL_ASSERT(1, expr, #expr)
+#define EXPECT(expr) INTERNAL_ASSERT(expr, 0)
+#define ASSERT(expr) INTERNAL_ASSERT(expr, 1)
 
 typedef struct {
   void (*fn)(int *);
