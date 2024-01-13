@@ -16,13 +16,13 @@ out:
 	mkdir -p out/obj out/tests out/bin
 
 out/obj/%.o: src/%.c src/internal.h include/webb/webb.h | out
-	$(CC) $(CFLAGS) -Iinclude -o $@ $< -c
+	$(CC) $(CFLAGS) -Iinclude -c $< -o $@
 
 out/tests/%: tests/%.c $(DLIB)
-	$(CC) $(CFLAGS) -Iinclude -o $@ $^ -Isrc
+	$(CC) $(CFLAGS) -Iinclude -Isrc $^ -o $@
 
 out/bin/%: bin/%.c $(SLIB)
-	$(CC) $(CFLAGS) -Iinclude -o $@ $^
+	$(CC) $(CFLAGS) -Iinclude $^ -o $@
 
 $(SLIB): $(OBJS)
 	$(AR) rc $@ $^
