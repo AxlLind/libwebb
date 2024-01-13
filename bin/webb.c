@@ -48,8 +48,7 @@ int handle_dir(WebbResponse *res, const char *path, const char *uri) {
   char *html = malloc(65536), *s = html;
   s += sprintf(s, "<!DOCTYPE html>\n<html>\n<body>\n<ul>\n");
 
-  struct dirent *entry;
-  while ((entry = readdir(dp))) {
+  for (struct dirent *entry; (entry = readdir(dp));) {
     if (strcmp(entry->d_name, ".") == 0)
       continue;
     if (strcmp(entry->d_name, "..") == 0)
