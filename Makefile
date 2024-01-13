@@ -18,11 +18,11 @@ out:
 out/obj/%.o: src/%.c src/internal.h include/webb/webb.h | out
 	$(CC) $(CFLAGS) -Iinclude -c $< -o $@
 
-out/tests/%: tests/%.c $(DLIB)
-	$(CC) $(CFLAGS) -Iinclude -Isrc $^ -o $@
-
 out/bin/%: bin/%.c $(SLIB)
 	$(CC) $(CFLAGS) -Iinclude $^ -o $@
+
+out/tests/%: tests/%.c $(DLIB)
+	$(CC) $(CFLAGS) -Iinclude -Isrc $^ -o $@
 
 $(SLIB): $(OBJS)
 	$(AR) rc $@ $^
@@ -30,11 +30,11 @@ $(SLIB): $(OBJS)
 $(DLIB): $(OBJS)
 	$(CC) -shared $^ -o $@
 
-%-lint:
+%-lint: %
 	clang-tidy $* -- -std=gnu99 -Isrc -Iinclude 2>/dev/null
 
 #@ Compile everything
-build: $(SLIB) $(DLIB) $(TESTS) $(BINS)
+build: $(SLIB) $(DLIB) $(BINS) $(TESTS)
 
 #@ Run the web server
 run: out/bin/webb
